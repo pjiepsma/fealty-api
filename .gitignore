@@ -42,6 +42,9 @@ next-env.d.ts
 
 /media
 
+# MongoDB Memory Server storage
+/bin/storage
+
 # Playwright
 node_modules/
 /test-results/

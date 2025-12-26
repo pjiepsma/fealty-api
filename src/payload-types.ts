@@ -69,7 +69,12 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    pois: Pois;
+    sessions: Session;
+    rewards: Reward;
+    challenges: Challenge;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -78,7 +83,12 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    pois: PoisSelect<false> | PoisSelect<true>;
+    sessions: SessionsSelect<false> | SessionsSelect<true>;
+    rewards: RewardsSelect<false> | RewardsSelect<true>;
+    challenges: ChallengesSelect<false> | ChallengesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -87,14 +97,32 @@ export interface Config {
     defaultIDType: string;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'challenge-config': ChallengeConfig;
+    mail: Mail;
+    'payload-jobs-stats': PayloadJobsStat;
+  };
+  globalsSelect: {
+    'challenge-config': ChallengeConfigSelect<false> | ChallengeConfigSelect<true>;
+    mail: MailSelect<false> | MailSelect<true>;
+    'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
+  };
   locale: null;
   user: User & {
     collection: 'users';
   };
   jobs: {
-    tasks: unknown;
+    tasks: {
+      'assign-daily-challenges': TaskAssignDailyChallenges;
+      'assign-weekly-challenges': TaskAssignWeeklyChallenges;
+      'assign-monthly-challenges': TaskAssignMonthlyChallenges;
+      'expire-challenges': TaskExpireChallenges;
+      'daily-decay': TaskDailyDecay;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -122,6 +150,151 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
+  /**
+   * Unique username for the user
+   */
+  username: string;
+  /**
+   * Whether the user has premium subscription
+   */
+  isPremium?: boolean | null;
+  /**
+   * Total seconds earned from all claims
+   */
+  totalSeconds?: number | null;
+  /**
+   * Total number of unique POIs claimed
+   */
+  totalPOIsClaimed?: number | null;
+  /**
+   * Number of POIs where user is currently the king
+   */
+  currentKingOf?: number | null;
+  /**
+   * Longest streak of consecutive days with claims
+   */
+  longestStreak?: number | null;
+  /**
+   * Current streak of consecutive days with claims
+   */
+  currentStreak?: number | null;
+  /**
+   * Last time user was active
+   */
+  lastActive?: string | null;
+  /**
+   * User home country
+   */
+  homeCountry?: string | null;
+  /**
+   * User home city
+   */
+  homeCity?: string | null;
+  /**
+   * Home city latitude
+   */
+  homeCityLat?: number | null;
+  /**
+   * Home city longitude
+   */
+  homeCityLng?: number | null;
+  /**
+   * When location was last updated
+   */
+  locationUpdatedAt?: string | null;
+  /**
+   * Number of times location has been updated
+   */
+  locationUpdateCount?: number | null;
+  /**
+   * User coins for purchasing challenge buyouts
+   */
+  coins?: number | null;
+  /**
+   * User notification preferences
+   */
+  notificationSettings?: {
+    poiNearby?: boolean | null;
+    captureComplete?: boolean | null;
+    kingStatusChanged?: boolean | null;
+    newChallenge?: boolean | null;
+    friendActivity?: boolean | null;
+    leaderboardUpdate?: boolean | null;
+    dailyReminder?: boolean | null;
+    weeklyReport?: boolean | null;
+  };
+  /**
+   * Push tokens for this user (supports multiple devices)
+   */
+  pushTokens?:
+    | {
+        /**
+         * Expo push token
+         */
+        expoPushToken: string;
+        /**
+         * Platform of the device
+         */
+        platform?: ('ios' | 'android') | null;
+        /**
+         * Device identifier
+         */
+        deviceId?: string | null;
+        /**
+         * Whether this token is active
+         */
+        isActive?: boolean | null;
+        /**
+         * When this token was last updated
+         */
+        updatedAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * User role
+   */
+  role: 'user' | 'admin';
+  /**
+   * Active rewards for this user
+   */
+  activeRewards?:
+    | {
+        /**
+         * The reward that is active
+         */
+        reward: string | Reward;
+        /**
+         * Denormalized reward type for speed
+         */
+        rewardType: string;
+        /**
+         * Denormalized reward value for speed
+         */
+        rewardValue: number;
+        /**
+         * For time-based rewards, when it expires (null for season-based)
+         */
+        expiresAt?: string | null;
+        /**
+         * YYYY-MM format, for season-based rewards like bonus_crowns
+         */
+        season?: string | null;
+        /**
+         * For use-based rewards, number of uses remaining (null for unlimited or season-based)
+         */
+        usesRemaining?: number | null;
+        /**
+         * Whether this reward is currently active
+         */
+        isActive?: boolean | null;
+        /**
+         * ID of the challenge that granted this reward
+         */
+        challengeId?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -139,6 +312,49 @@ export interface User {
       }[]
     | null;
   password?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rewards".
+ */
+export interface Reward {
+  id: string;
+  /**
+   * Type of reward
+   */
+  rewardType:
+    | 'entry_time_reduction'
+    | 'bonus_seconds'
+    | 'larger_radius'
+    | 'extended_capture'
+    | 'bonus_crowns'
+    | 'decay_reduction';
+  /**
+   * Reward value (e.g., 0.1 for 10% reduction, 10 for bonus seconds)
+   */
+  rewardValue: number;
+  /**
+   * Duration in hours (null for session-based or season-based)
+   */
+  rewardDuration?: number | null;
+  /**
+   * Number of times to use (null for unlimited or season-based)
+   */
+  rewardUses?: number | null;
+  /**
+   * Difficulty level (1-9)
+   */
+  difficulty: number;
+  /**
+   * Description of the reward
+   */
+  description: string;
+  /**
+   * Whether this reward is active
+   */
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -161,6 +377,147 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pois".
+ */
+export interface Pois {
+  /**
+   * Unique identifier for the POI (e.g., OSM ID)
+   */
+  id: string;
+  /**
+   * Name of the POI
+   */
+  name: string;
+  /**
+   * Geographic coordinates (longitude, latitude)
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  coordinates: [number, number];
+  /**
+   * Latitude (for easier querying)
+   */
+  latitude: number;
+  /**
+   * Longitude (for easier querying)
+   */
+  longitude: number;
+  /**
+   * POI type (e.g., park, church, monument)
+   */
+  type: string;
+  /**
+   * POI category (e.g., leisure, religion, tourism)
+   */
+  category: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sessions".
+ */
+export interface Session {
+  id: string;
+  /**
+   * User who made this session
+   */
+  user: string | User;
+  /**
+   * POI where the session took place
+   */
+  poi: string | Pois;
+  /**
+   * When the session started
+   */
+  startTime: string;
+  /**
+   * When the session ended
+   */
+  endTime?: string | null;
+  /**
+   * Seconds earned from this session
+   */
+  secondsEarned: number;
+  /**
+   * Month in YYYY-MM format for leaderboard grouping
+   */
+  month: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "challenges".
+ */
+export interface Challenge {
+  id: string;
+  /**
+   * User who has this challenge
+   */
+  user: string | User;
+  /**
+   * Challenge type
+   */
+  type: 'daily' | 'weekly' | 'monthly';
+  /**
+   * Challenge title
+   */
+  title: string;
+  /**
+   * Challenge description
+   */
+  description: string;
+  /**
+   * Type of challenge objective
+   */
+  challengeType: 'entry_count' | 'crown_count' | 'crown_takeover' | 'crown_reclaim';
+  /**
+   * Target value (e.g., 5 entries, 3 crowns)
+   */
+  targetValue: number;
+  /**
+   * Optional: Target category (e.g., park, church)
+   */
+  targetCategory?: string | null;
+  /**
+   * Difficulty level (1-9) that determines which reward is assigned
+   */
+  rewardDifficulty: number;
+  /**
+   * Number of coins to buy out challenge (0 means not purchasable)
+   */
+  cost?: number | null;
+  /**
+   * The assigned reward for this challenge
+   */
+  reward: string | Reward;
+  /**
+   * Current progress towards the challenge
+   */
+  progress?: number | null;
+  /**
+   * When the challenge was completed
+   */
+  completedAt?: string | null;
+  /**
+   * When the reward was claimed
+   */
+  claimedAt?: string | null;
+  /**
+   * When the challenge expires (for daily/weekly/monthly)
+   */
+  expiresAt: string;
+  /**
+   * True for daily challenges, false for shared weekly/monthly
+   */
+  isPersonal?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -178,6 +535,122 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: string;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug:
+          | 'inline'
+          | 'assign-daily-challenges'
+          | 'assign-weekly-challenges'
+          | 'assign-monthly-challenges'
+          | 'expire-challenges'
+          | 'daily-decay';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?:
+    | (
+        | 'inline'
+        | 'assign-daily-challenges'
+        | 'assign-weekly-challenges'
+        | 'assign-monthly-challenges'
+        | 'expire-challenges'
+        | 'daily-decay'
+      )
+    | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  meta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -190,6 +663,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'pois';
+        value: string | Pois;
+      } | null)
+    | ({
+        relationTo: 'sessions';
+        value: string | Session;
+      } | null)
+    | ({
+        relationTo: 'rewards';
+        value: string | Reward;
+      } | null)
+    | ({
+        relationTo: 'challenges';
+        value: string | Challenge;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -238,6 +727,57 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  username?: T;
+  isPremium?: T;
+  totalSeconds?: T;
+  totalPOIsClaimed?: T;
+  currentKingOf?: T;
+  longestStreak?: T;
+  currentStreak?: T;
+  lastActive?: T;
+  homeCountry?: T;
+  homeCity?: T;
+  homeCityLat?: T;
+  homeCityLng?: T;
+  locationUpdatedAt?: T;
+  locationUpdateCount?: T;
+  coins?: T;
+  notificationSettings?:
+    | T
+    | {
+        poiNearby?: T;
+        captureComplete?: T;
+        kingStatusChanged?: T;
+        newChallenge?: T;
+        friendActivity?: T;
+        leaderboardUpdate?: T;
+        dailyReminder?: T;
+        weeklyReport?: T;
+      };
+  pushTokens?:
+    | T
+    | {
+        expoPushToken?: T;
+        platform?: T;
+        deviceId?: T;
+        isActive?: T;
+        updatedAt?: T;
+        id?: T;
+      };
+  role?: T;
+  activeRewards?:
+    | T
+    | {
+        reward?: T;
+        rewardType?: T;
+        rewardValue?: T;
+        expiresAt?: T;
+        season?: T;
+        usesRemaining?: T;
+        isActive?: T;
+        challengeId?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -275,11 +815,110 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pois_select".
+ */
+export interface PoisSelect<T extends boolean = true> {
+  id?: T;
+  name?: T;
+  coordinates?: T;
+  latitude?: T;
+  longitude?: T;
+  type?: T;
+  category?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sessions_select".
+ */
+export interface SessionsSelect<T extends boolean = true> {
+  user?: T;
+  poi?: T;
+  startTime?: T;
+  endTime?: T;
+  secondsEarned?: T;
+  month?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rewards_select".
+ */
+export interface RewardsSelect<T extends boolean = true> {
+  rewardType?: T;
+  rewardValue?: T;
+  rewardDuration?: T;
+  rewardUses?: T;
+  difficulty?: T;
+  description?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "challenges_select".
+ */
+export interface ChallengesSelect<T extends boolean = true> {
+  user?: T;
+  type?: T;
+  title?: T;
+  description?: T;
+  challengeType?: T;
+  targetValue?: T;
+  targetCategory?: T;
+  rewardDifficulty?: T;
+  cost?: T;
+  reward?: T;
+  progress?: T;
+  completedAt?: T;
+  claimedAt?: T;
+  expiresAt?: T;
+  isPersonal?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  meta?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -312,6 +951,425 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "challenge-config".
+ */
+export interface ChallengeConfig {
+  id: string;
+  /**
+   * Number of daily challenges to generate per user
+   */
+  dailyChallengesCount: number;
+  /**
+   * Number of weekly challenges to generate for all users
+   */
+  weeklyChallengesCount: number;
+  /**
+   * Number of monthly challenges to generate for all users
+   */
+  monthlyChallengesCount: number;
+  dailyEntryCount: {
+    /**
+     * Easy: target value (e.g., 1 entry)
+     */
+    easy: number;
+    /**
+     * Medium: target value (e.g., 3 entries)
+     */
+    medium: number;
+    /**
+     * Hard: target value (e.g., 5 entries)
+     */
+    hard: number;
+  };
+  dailyCrownCount: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  dailyCrownTakeover: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  dailyCrownReclaim: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  weeklyEntryCount: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  weeklyCrownCount: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  weeklyCrownTakeover: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  weeklyCrownReclaim: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  monthlyEntryCount: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  monthlyCrownCount: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  monthlyCrownTakeover: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  monthlyCrownReclaim: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  titleTemplates: {
+    /**
+     * Template for entry count challenges. Use {targetValue}, {period}, {category} as placeholders
+     */
+    entryCount: string;
+    /**
+     * Template for crown count challenges
+     */
+    crownCount: string;
+    /**
+     * Template for crown takeover challenges
+     */
+    crownTakeover: string;
+    /**
+     * Template for crown reclaim challenges
+     */
+    crownReclaim: string;
+  };
+  descriptionTemplates: {
+    /**
+     * Template for entry count challenge descriptions
+     */
+    entryCount: string;
+    crownCount: string;
+    crownTakeover: string;
+    crownReclaim: string;
+  };
+  costMultipliers: {
+    /**
+     * Base cost multiplier for easy challenges
+     */
+    easy: number;
+    /**
+     * Base cost multiplier for medium challenges
+     */
+    medium: number;
+    /**
+     * Base cost multiplier for hard challenges
+     */
+    hard: number;
+  };
+  availableCategories?:
+    | {
+        category: string;
+        /**
+         * Difficulty adjustment for category-specific challenges (+1, +2, etc.)
+         */
+        difficultyAdjustment?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mail".
+ */
+export interface Mail {
+  id: string;
+  headerLogo: string | Media;
+  footerLogo: string | Media;
+  fromEmail: string;
+  verify?: {
+    /**
+     * Use the following placeholders to insert dynamic values: {{name}}, {{verifyLink}}
+     */
+    subject?: string | null;
+    /**
+     * Use the following placeholders to insert dynamic values: {{name}}, {{verifyLink}}
+     */
+    content?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  forgotPassword?: {
+    /**
+     * Use the following placeholders to insert dynamic values: {{token}}, {{origin}}
+     */
+    subject?: string | null;
+    /**
+     * Use the following placeholders to insert dynamic values: {{token}}, {{origin}}
+     */
+    content?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats".
+ */
+export interface PayloadJobsStat {
+  id: string;
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "challenge-config_select".
+ */
+export interface ChallengeConfigSelect<T extends boolean = true> {
+  dailyChallengesCount?: T;
+  weeklyChallengesCount?: T;
+  monthlyChallengesCount?: T;
+  dailyEntryCount?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  dailyCrownCount?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  dailyCrownTakeover?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  dailyCrownReclaim?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  weeklyEntryCount?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  weeklyCrownCount?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  weeklyCrownTakeover?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  weeklyCrownReclaim?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  monthlyEntryCount?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  monthlyCrownCount?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  monthlyCrownTakeover?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  monthlyCrownReclaim?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  titleTemplates?:
+    | T
+    | {
+        entryCount?: T;
+        crownCount?: T;
+        crownTakeover?: T;
+        crownReclaim?: T;
+      };
+  descriptionTemplates?:
+    | T
+    | {
+        entryCount?: T;
+        crownCount?: T;
+        crownTakeover?: T;
+        crownReclaim?: T;
+      };
+  costMultipliers?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  availableCategories?:
+    | T
+    | {
+        category?: T;
+        difficultyAdjustment?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mail_select".
+ */
+export interface MailSelect<T extends boolean = true> {
+  headerLogo?: T;
+  footerLogo?: T;
+  fromEmail?: T;
+  verify?:
+    | T
+    | {
+        subject?: T;
+        content?: T;
+      };
+  forgotPassword?:
+    | T
+    | {
+        subject?: T;
+        content?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats_select".
+ */
+export interface PayloadJobsStatsSelect<T extends boolean = true> {
+  stats?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskAssign-daily-challenges".
+ */
+export interface TaskAssignDailyChallenges {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskAssign-weekly-challenges".
+ */
+export interface TaskAssignWeeklyChallenges {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskAssign-monthly-challenges".
+ */
+export interface TaskAssignMonthlyChallenges {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskExpire-challenges".
+ */
+export interface TaskExpireChallenges {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskDaily-decay".
+ */
+export interface TaskDailyDecay {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

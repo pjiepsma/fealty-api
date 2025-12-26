@@ -17,10 +17,33 @@ After you click the `Deploy` button above, you'll want to have standalone copy o
 ### Development
 
 1. First [clone the repo](#clone) if you have not done so already
-2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `MONGODB_URL` from your Cloud project to your `.env` if you want to use S3 storage and the MongoDB database that was created for you.
+2. Create a `.env` file in the root directory with the following environment variables:
+   ```env
+   # Payload CMS Configuration
+   PAYLOAD_SECRET=your-secret-key-here
+   DATABASE_URL=mongodb://127.0.0.1:27017/payload
 
-3. `pnpm install && pnpm dev` to install dependencies and start the dev server
-4. open `http://localhost:3000` to open the app in your browser
+   # Resend Email Configuration
+   RESEND_API_KEY=re_V4fvqrg2_6wUzxHbCGgdE2WrCJmLdzGWz
+   RESEND_FROM_EMAIL=noreply@deelbaar.com
+   RESEND_FROM_NAME=Fealty
+
+   # Payload Jobs Configuration
+   ENABLE_PAYLOAD_AUTORUN=true
+   ```
+   
+   **Note**: The `DATABASE_URL` should point to `mongodb://127.0.0.1:27017/payload` as the dev script will start an in-memory MongoDB server on that port.
+   
+   **Note**: 
+   - Get your `RESEND_API_KEY` from [Resend](https://resend.com/)
+   - The `RESEND_FROM_EMAIL` should be a verified domain email or use `onboarding@resend.dev` for testing
+   - For production, use your verified domain email (e.g., `noreply@yourdomain.com`)
+   - `ENABLE_PAYLOAD_AUTORUN=true` enables Payload's job scheduler for cron jobs (challenge assignment, expiration cleanup, daily decay)
+
+3. `pnpm install && pnpm dev` to install dependencies and start both the MongoDB server and the Payload CMS server
+4. open `http://localhost:4000` to open the app in your browser
+
+**Note**: The `dev` command uses `concurrently` to start both the MongoDB in-memory server and the Payload CMS server. The CMS runs on port 4000, and MongoDB runs on port 27017.
 
 That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
 
