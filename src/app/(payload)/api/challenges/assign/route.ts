@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     // Generate daily challenges (1-3 difficulty)
     const dailyChallenges = [
       {
-        type: 'daily',
+        type: 'daily' as const,
         title: 'Daily Entry Challenge',
         description: 'Make 3 entries today',
         challengeType: 'entry_count',
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         rewardDifficulty: 2,
       },
       {
-        type: 'daily',
+        type: 'daily' as const,
         title: 'Daily Crown Challenge',
         description: 'Become king of 1 POI today',
         challengeType: 'crown_count',
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     // Generate weekly challenges (4-6 difficulty)
     const weeklyChallenges = [
       {
-        type: 'weekly',
+        type: 'weekly' as const,
         title: 'Weekly Entry Challenge',
         description: 'Make 10 entries this week',
         challengeType: 'entry_count',
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         rewardDifficulty: 5,
       },
       {
-        type: 'weekly',
+        type: 'weekly' as const,
         title: 'Weekly Crown Challenge',
         description: 'Become king of 3 POIs this week',
         challengeType: 'crown_count',
