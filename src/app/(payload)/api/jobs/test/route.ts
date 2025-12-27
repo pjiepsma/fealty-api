@@ -53,21 +53,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create a proper PayloadRequest object
-    const mockReq = {
-      payload,
-      user: null, // Jobs run as system/admin
-      context: {},
-      headers: new Headers(),
-      i18n: payload.i18n,
-      locale: payload.i18n?.defaultLocale || 'en',
-      t: payload.i18n?.t || ((key: string) => key),
-    } as PayloadRequest
-
-    // Get the handler for this job
+    // Get the task config for this job
     const taskConfig = jobHandlers[jobSlug as JobSlug]
     
-    if (!taskConfig || !taskConfig.handler) {
+    if (!taskConfig) {
       return NextResponse.json(
         {
           error: `Handler not found for job: ${jobSlug}`,
@@ -76,11 +65,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Create a minimal PayloadRequest object
+    // Using a simpler approach: just pass payload and let the handler work with it
+    const mockReq = {
+      payload,
+      user: null, // Jobs run as system/admin
+    } as unknown as PayloadRequest
+
     // Execute the job handler directly
-    const result = await taskConfig.handler({
+    // The handler expects { req, input } as arguments
+    // Type assertion needed because TypeScript can't infer the handler type correctly
+    const handler = taskConfig.handler
+    if (typeof handler !== 'function') {
+      return NextResponse.json(
+        {
+          error: `Invalid handler for job: ${jobSlug}`,
+        },
+        { status: 500 },
+      )
+    }
+    
+    const result = await (handler as (args: { req: PayloadRequest; input: unknown }) => Promise<unknown>)({
       req: mockReq,
       input: {},
-      id: `test-${Date.now()}`,
     })
 
     return NextResponse.json({

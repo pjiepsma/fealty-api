@@ -1,5 +1,3 @@
-import { getPayload } from 'payload'
-import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
 import { seedRewards } from '@/scripts/seedRewards'
 

@@ -171,13 +171,14 @@ export default function JobTestButtons() {
             >
               {job.description}
             </p>
-            <Button
-              onClick={() => executeJob(job.slug)}
-              disabled={loading[job.slug]}
-              style={{ width: '100%' }}
-            >
-              {loading[job.slug] ? 'Running...' : 'Run Job'}
-            </Button>
+            <div style={{ width: '100%' }}>
+              <Button
+                onClick={() => executeJob(job.slug)}
+                disabled={loading[job.slug]}
+              >
+                {loading[job.slug] ? 'Running...' : 'Run Job'}
+              </Button>
+            </div>
             {results[job.slug] && (
               <div
                 style={{
@@ -220,9 +221,11 @@ export default function JobTestButtons() {
         >
           Create default rewards for difficulty levels 1-9 (idempotent - safe to run multiple times)
         </p>
-        <Button onClick={seedRewards} disabled={seedLoading} style={{ width: '100%' }}>
-          {seedLoading ? 'Seeding...' : 'Seed Rewards'}
-        </Button>
+        <div style={{ width: '100%' }}>
+          <Button onClick={seedRewards} disabled={seedLoading}>
+            {seedLoading ? 'Seeding...' : 'Seed Rewards'}
+          </Button>
+        </div>
         {seedResult && (
           <div
             style={{
