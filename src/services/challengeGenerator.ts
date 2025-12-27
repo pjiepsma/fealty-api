@@ -7,7 +7,6 @@ import {
   getChallengeCost,
   generateTitle,
   generateDescription,
-  getAvailableCategories,
 } from '../config/challengeRules'
 import { getRewardDifficulty } from '../utils/difficultyCalculator'
 

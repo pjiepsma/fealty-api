@@ -1,7 +1,15 @@
 import type { PayloadRequest } from 'payload'
+import type { User } from '@/payload-types'
 
 interface PushNotificationData {
-  [key: string]: any
+  [key: string]: string | number | boolean | null | undefined
+}
+
+interface PushToken {
+  expoPushToken: string
+  isActive?: boolean
+  platform?: 'ios' | 'android'
+  id?: string
 }
 
 /**
@@ -26,8 +34,8 @@ export async function sendPushNotification(
     }
 
     // Get active push tokens
-    const pushTokens = (user.pushTokens || []).filter(
-      (token: any) => token.isActive && token.expoPushToken
+    const pushTokens = ((user.pushTokens || []) as PushToken[]).filter(
+      (token) => token.isActive && token.expoPushToken
     )
 
     if (pushTokens.length === 0) {
@@ -35,9 +43,9 @@ export async function sendPushNotification(
     }
 
     // Build messages array for Expo API
-    const messages = pushTokens.map((token: any) => ({
+    const messages = pushTokens.map((token) => ({
       to: token.expoPushToken,
-      sound: 'default',
+      sound: 'default' as const,
       title,
       body,
       data: data || {},
@@ -64,18 +72,21 @@ export async function sendPushNotification(
 
     const result = await response.json()
 
-    if (result.data && result.data.length > 0) {
+    if (result.data && Array.isArray(result.data) && result.data.length > 0) {
       // Check for errors in individual messages
-      const hasErrors = result.data.some((item: any) => item.status === 'error')
+      const hasErrors = result.data.some(
+        (item: { status?: string }) => item.status === 'error'
+      )
       if (hasErrors) {
         console.warn('Some push notifications failed:', result.data)
       }
     }
 
     return { success: true }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error sending push notification:', error)
-    return { success: false, error: error.message || 'Unknown error' }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return { success: false, error: errorMessage }
   }
 }
 
@@ -140,9 +151,10 @@ export async function sendPushNotificationWithPreferences(
 
     // Send notification
     return await sendPushNotification(req, userId, title, body, data)
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error sending push notification with preferences:', error)
-    return { success: false, error: error.message || 'Unknown error' }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return { success: false, error: errorMessage }
   }
 }
 
