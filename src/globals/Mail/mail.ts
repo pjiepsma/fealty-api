@@ -42,6 +42,13 @@ export const Mail: GlobalConfig = {
           required: true,
           defaultValue: 'no-reply@fealty.app',
         },
+        {
+          name: 'fromName',
+          label: 'From name',
+          type: 'text',
+          required: true,
+          defaultValue: 'Fealty',
+        },
       ],
     },
     {

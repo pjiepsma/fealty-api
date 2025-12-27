@@ -160,12 +160,32 @@ export const sendMail = async ({
 }: SendMailArgs): Promise<void> => {
   const { subject, body } = await generateMail({ type, placeholders, req })
 
+  // Get fromEmail and fromName from Mail global (configured in Payload UI)
+  const mailGlobal = await req.payload.findGlobal({
+    slug: 'mail',
+    select: {
+      fromEmail: true,
+      fromName: true,
+    },
+  })
+
+  // Format "From" field: "Name <email@example.com>" or just email
+  let fromField: string | undefined
+  if (mailGlobal?.fromEmail) {
+    if (mailGlobal.fromName) {
+      fromField = `${mailGlobal.fromName} <${mailGlobal.fromEmail}>`
+    } else {
+      fromField = mailGlobal.fromEmail
+    }
+  }
+
   // Send email directly using the configured email adapter
   for (const email of to) {
     await req.payload.sendEmail({
       to: email,
       subject,
       html: body,
+      ...(fromField && { from: fromField }), // Use fromEmail/fromName from Mail global if available
       ...(bcc && bcc.length > 0 && { bcc }),
     })
   }

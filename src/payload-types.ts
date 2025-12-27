@@ -1102,6 +1102,7 @@ export interface Mail {
   headerLogo: string | Media;
   footerLogo: string | Media;
   fromEmail: string;
+  fromName: string;
   verify?: {
     /**
      * Use the following placeholders to insert dynamic values: {{name}}, {{verifyLink}}
@@ -1305,6 +1306,7 @@ export interface MailSelect<T extends boolean = true> {
   headerLogo?: T;
   footerLogo?: T;
   fromEmail?: T;
+  fromName?: T;
   verify?:
     | T
     | {
