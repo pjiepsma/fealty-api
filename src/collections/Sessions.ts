@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import type { Session } from '@/payload-types'
 
 export const Sessions: CollectionConfig = {
   slug: 'sessions',
@@ -53,7 +54,7 @@ export const Sessions: CollectionConfig = {
             })
 
             const uniquePOIs = new Set(
-              userSessions.docs.map((session: any) => {
+              userSessions.docs.map((session: Session) => {
                 const poiId = typeof session.poi === 'string' ? session.poi : session.poi?.id
                 return poiId
               }),

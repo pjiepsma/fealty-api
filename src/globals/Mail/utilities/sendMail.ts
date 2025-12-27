@@ -4,12 +4,7 @@ import { slateToHtml, payloadSlateToHtmlConfig } from '@slate-serializers/html'
 import { buildHtmlEmailTemplate } from './htmlEmailTemplate'
 import { extractObject } from '@/lib/extractID'
 
-type MailOptions = Omit<
-  Mail,
-  'id' | 'createdAt' | 'updatedAt' | 'headerLogo' | 'footerLogo' | 'fromEmail'
->
-
-type MailTemplateType = keyof MailOptions
+type MailTemplateType = 'verify' | 'forgotPassword'
 
 type GenerateMail = {
   subject: string
@@ -73,16 +68,29 @@ export const generateMail = async ({
   placeholders,
   req,
 }: GenerateMailArgs): Promise<GenerateMail> => {
+  // Build select object dynamically based on type
+  const selectFields =
+    type === 'verify'
+      ? {
+          headerLogo: true as const,
+          footerLogo: true as const,
+          verify: {
+            subject: true as const,
+            content: true as const,
+          },
+        }
+      : {
+          headerLogo: true as const,
+          footerLogo: true as const,
+          forgotPassword: {
+            subject: true as const,
+            content: true as const,
+          },
+        }
+
   const mailGlobal = await req.payload.findGlobal({
     slug: 'mail',
-    select: {
-      headerLogo: true,
-      footerLogo: true,
-      [type]: {
-        subject: true,
-        content: true,
-      },
-    },
+    select: selectFields,
   })
 
   if (!mailGlobal) {

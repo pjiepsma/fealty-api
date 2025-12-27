@@ -1,4 +1,5 @@
 import type { TaskConfig } from 'payload'
+import type { User } from '@/payload-types'
 
 const DEFAULT_DECAY_PERCENTAGE = 5.0
 const MINIMUM_DECAY_PERCENTAGE = 2.0
@@ -32,14 +33,14 @@ export const dailyDecayTask: TaskConfig = {
 
           // Get user's active decay_reduction rewards
           const activeRewards = (user.activeRewards || []).filter(
-            (reward: any) =>
+            (reward: NonNullable<User['activeRewards']>[number]) =>
               reward.isActive &&
               reward.rewardType === 'decay_reduction' &&
               (!reward.expiresAt || new Date(reward.expiresAt) > new Date())
           )
 
           // Calculate total decay reduction from active rewards
-          const totalDecayReduction = activeRewards.reduce((sum: number, reward: any) => {
+          const totalDecayReduction = activeRewards.reduce((sum: number, reward: NonNullable<User['activeRewards']>[number]) => {
             return sum + (reward.rewardValue || 0)
           }, 0)
 

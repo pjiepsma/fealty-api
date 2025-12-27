@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
+import type { Challenge, Reward } from '@/payload-types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
     for (const challengeTemplate of dailyChallenges) {
       // Check if user already has this type of challenge
       const hasExisting = existingChallenges.docs.some(
-        (c: any) => c.type === challengeTemplate.type && c.challengeType === challengeTemplate.challengeType
+        (c: Challenge) => c.type === challengeTemplate.type && c.challengeType === challengeTemplate.challengeType
       )
 
       if (hasExisting) {
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
 
       // Get a random reward for the difficulty level
       const availableRewards = rewards.docs.filter(
-        (r: any) => r.difficulty === challengeTemplate.rewardDifficulty
+        (r: Reward) => r.difficulty === challengeTemplate.rewardDifficulty
       )
 
       if (availableRewards.length === 0) {
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
     for (const challengeTemplate of weeklyChallenges) {
       // Check if user already has this type of challenge
       const hasExisting = existingChallenges.docs.some(
-        (c: any) => c.type === challengeTemplate.type && c.challengeType === challengeTemplate.challengeType
+        (c: Challenge) => c.type === challengeTemplate.type && c.challengeType === challengeTemplate.challengeType
       )
 
       if (hasExisting) {
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
 
       // Get a random reward for the difficulty level
       const availableRewards = rewards.docs.filter(
-        (r: any) => r.difficulty === challengeTemplate.rewardDifficulty
+        (r: Reward) => r.difficulty === challengeTemplate.rewardDifficulty
       )
 
       if (availableRewards.length === 0) {

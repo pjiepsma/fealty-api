@@ -1,11 +1,11 @@
-import type { TaskConfig } from 'payload'
+import type { TaskConfig, PayloadRequest } from 'payload'
 import type { Period } from '../config/challengeRules'
 import { generateChallengesForUser, generateSharedChallenges } from '../services/challengeGenerator'
 
 /**
  * Assign daily challenges (personal challenges for each user)
  */
-async function assignDailyChallenges(req: any): Promise<{ assignedCount: number; errorCount: number }> {
+async function assignDailyChallenges(req: PayloadRequest): Promise<{ assignedCount: number; errorCount: number }> {
   // Get all active users
   const users = await req.payload.find({
     collection: 'users',
@@ -122,7 +122,7 @@ async function assignDailyChallenges(req: any): Promise<{ assignedCount: number;
 /**
  * Assign shared challenges for weekly/monthly periods
  */
-async function assignSharedChallengesForPeriod(req: any, period: Period): Promise<{ assignedCount: number; errorCount: number }> {
+async function assignSharedChallengesForPeriod(req: PayloadRequest, period: Period): Promise<{ assignedCount: number; errorCount: number }> {
   // Check if challenges already exist for this period
   const existingChallenges = await req.payload.find({
     collection: 'challenges',

@@ -4,7 +4,9 @@ This document lists all environment variables that need to be set in Vercel.
 
 ## Quick Setup via Vercel Dashboard
 
-1. Go to your Vercel project: https://vercel.com/pjiepsmas-projects/fealty-api/settings/environment-variables
+1. Go to your Vercel project settings:
+   - Navigate: **Dashboard** → **fealty-api** → **Settings** → **Environment Variables**
+   - Or go directly to: `https://vercel.com/[your-team]/fealty-api/settings/environment-variables`
 2. Add each variable below for **Production**, **Preview**, and **Development** environments
 
 ## Environment Variables

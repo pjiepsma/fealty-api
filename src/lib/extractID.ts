@@ -1,8 +1,4 @@
-import type { CollectionSlug, Config } from 'payload'
-
-type ConfigType = Config
-
-export const extractID = <T extends ConfigType['collections'][CollectionSlug]>(
+export const extractID = <T extends { id: string }>(
   objectOrID: T | T['id'],
 ): T['id'] => {
   return objectOrID && typeof objectOrID === 'object' ? objectOrID.id : objectOrID

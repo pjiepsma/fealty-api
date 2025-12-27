@@ -1,8 +1,9 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
+import type { Session } from '@/payload-types'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const payload = await getPayload({ config })
 
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
         const kingUserId = king[0]
 
         // Get user details
-        const kingSession = sessions.docs.find((s: any) => {
+        const kingSession = sessions.docs.find((s: Session) => {
           const userId = typeof s.user === 'string' ? s.user : s.user?.id
           return userId === kingUserId
         })

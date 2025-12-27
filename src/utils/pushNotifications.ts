@@ -117,7 +117,8 @@ export async function sendPushNotificationWithPreferences(
     const notificationSettings = user.notificationSettings || {}
 
     // Map notification type to setting key
-    let settingKey: string | undefined
+    type NotificationSettingKey = 'captureComplete' | 'kingStatusChanged' | 'leaderboardUpdate' | 'newChallenge'
+    let settingKey: NotificationSettingKey | undefined
     switch (type) {
       case 'claim_success':
       case 'claim_error':
@@ -136,8 +137,8 @@ export async function sendPushNotificationWithPreferences(
 
     // Check if notification is enabled (default to true if setting doesn't exist)
     const isEnabled = settingKey
-      ? notificationSettings[settingKey] !== undefined
-        ? notificationSettings[settingKey]
+      ? notificationSettings[settingKey] !== undefined && notificationSettings[settingKey] !== null
+        ? notificationSettings[settingKey] === true
         : true
       : true
 

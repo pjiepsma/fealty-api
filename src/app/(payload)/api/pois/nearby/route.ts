@@ -1,6 +1,9 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
+import type { Pois } from '@/payload-types'
+
+type PoisWithDistance = Pois & { distance: number }
 
 // Haversine formula to calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -72,7 +75,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate distance for each POI (in meters)
-    const poisWithDistance = pois.docs.map((poi: any) => {
+    const poisWithDistance: PoisWithDistance[] = pois.docs.map((poi: Pois) => {
       if (poi.coordinates) {
         const [poiLon, poiLat] = poi.coordinates
         const distanceKm = calculateDistance(lat, lon, poiLat, poiLon)
@@ -83,11 +86,15 @@ export async function GET(request: NextRequest) {
           distance: Math.round(distanceMeters), // Distance in meters
         }
       }
-      return poi
+      // If no coordinates, set distance to Infinity so it sorts last
+      return {
+        ...poi,
+        distance: Infinity,
+      }
     })
 
     // Sort by distance (closest first)
-    poisWithDistance.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
+    poisWithDistance.sort((a, b) => a.distance - b.distance)
 
     return NextResponse.json({
       docs: poisWithDistance,

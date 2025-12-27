@@ -64,7 +64,7 @@ export const Users: CollectionConfig = {
   },
   hooks: {
     afterChange: [
-      async ({ doc, req, operation, previousDoc }) => {
+      async ({ doc }) => {
         // Update user stats when claims are created (handled in Claims collection)
         // This hook can be used for other post-update operations
         return doc

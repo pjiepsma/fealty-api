@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   const headersList = await headers()
   const authHeader = headersList.get('authorization')
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const payload = await getPayload({ config })
+    await getPayload({ config })
     
     // Initialize Payload instance - this will trigger job processing
     // when ENABLE_PAYLOAD_AUTORUN=true, Payload automatically processes scheduled jobs
