@@ -1,5 +1,4 @@
 import type { PayloadRequest } from 'payload'
-import type { User } from '@/payload-types'
 
 interface PushNotificationData {
   [key: string]: string | number | boolean | null | undefined

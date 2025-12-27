@@ -1,5 +1,4 @@
 import type { CollectionSlug, Config } from 'payload'
-import type { Payload } from 'payload'
 
 type ConfigType = Config
 

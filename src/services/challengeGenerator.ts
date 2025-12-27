@@ -2,7 +2,6 @@ import type { PayloadRequest } from 'payload'
 import type { ChallengeType, DifficultyTier, Period } from '../config/challengeRules'
 import {
   getChallengePreset,
-  getAvailablePresets,
   getGenerationCount,
   getChallengeCost,
   generateTitle,
