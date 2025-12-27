@@ -4,6 +4,8 @@ type CreateMailTabArgs = {
   label: string
   name: string
   placeholders: string[]
+  defaultSubject?: string
+  defaultContent?: string
 }
 
 function mailTabDescription(placeholders: string[]): string {
@@ -14,7 +16,28 @@ function mailTabDescription(placeholders: string[]): string {
   return `Use the following placeholders to insert dynamic values: ${formattedPlaceholders}`
 }
 
-export const createMailTab = ({ label, name, placeholders }: CreateMailTabArgs): Tab => ({
+function textToLexical(text: string): { root: { children: Array<{ children: Array<{ text: string; type: string }>; type: string; version: number }>; direction: string; format: string; indent: number; type: string; version: number } } {
+  // Convert plain text to Lexical format
+  const lines = text.split('\n')
+  const children = lines.map((line) => ({
+    children: line ? [{ text: line, type: 'text' }] : [],
+    type: 'paragraph',
+    version: 1,
+  }))
+
+  return {
+    root: {
+      children,
+      direction: 'ltr',
+      format: '',
+      indent: 0,
+      type: 'root',
+      version: 1,
+    },
+  }
+}
+
+export const createMailTab = ({ label, name, placeholders, defaultSubject, defaultContent }: CreateMailTabArgs): Tab => ({
   name,
   label,
   fields: [
@@ -22,6 +45,7 @@ export const createMailTab = ({ label, name, placeholders }: CreateMailTabArgs):
       name: 'subject',
       label: 'Subject',
       type: 'text',
+      defaultValue: defaultSubject,
       admin: {
         description: mailTabDescription(placeholders),
       },
@@ -30,10 +54,12 @@ export const createMailTab = ({ label, name, placeholders }: CreateMailTabArgs):
       name: 'content',
       label: 'Content',
       type: 'richText',
+      defaultValue: defaultContent ? textToLexical(defaultContent) : undefined,
       admin: {
         description: mailTabDescription(placeholders),
       },
     },
   ],
 })
+
 

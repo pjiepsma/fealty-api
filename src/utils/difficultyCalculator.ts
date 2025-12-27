@@ -1,4 +1,4 @@
-import type { DifficultyTier } from '../config/challengeRules'
+import type { DifficultyTier, Period } from '../config/challengeRules'
 
 /**
  * Map difficulty tier to reward difficulty range
@@ -28,17 +28,40 @@ export function getRandomRewardDifficulty(tier: DifficultyTier): number {
 
 /**
  * Get reward difficulty with optional category adjustment
+ * Now uses period-based difficulty brackets instead of tier-based
  */
-export function getRewardDifficulty(tier: DifficultyTier, categoryAdjustment: number = 0): number {
-  let difficulty = getRandomRewardDifficulty(tier)
-  
+export function getRewardDifficulty(
+  tier: DifficultyTier,
+  categoryAdjustment: number = 0,
+  period?: Period
+): number {
+  let difficulty: number
+
+  // If period is provided, use period-based brackets
+  if (period) {
+    if (period === 'daily') {
+      // Daily: 1-4 bracket (makkelijker)
+      difficulty = Math.floor(Math.random() * 4) + 1
+    } else if (period === 'weekly') {
+      // Weekly: 2-8 bracket
+      difficulty = Math.floor(Math.random() * 7) + 2
+    } else {
+      // Monthly: 6-9 bracket
+      difficulty = Math.floor(Math.random() * 4) + 6
+    }
+  } else {
+    // Fallback to tier-based (for backwards compatibility)
+    difficulty = getRandomRewardDifficulty(tier)
+  }
+
   // Apply category adjustment (if category-specific challenge is harder)
   if (categoryAdjustment > 0) {
     difficulty = Math.min(9, difficulty + categoryAdjustment)
   }
-  
+
   return difficulty
 }
+
 
 
 

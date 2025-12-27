@@ -17,3 +17,4 @@ export function getSelectedEmailAdapter(): EmailAdapter | Promise<EmailAdapter> 
   return getDevEmailAdapter()
 }
 
+

@@ -2,7 +2,6 @@ import type { Mail } from '@/payload-types'
 import type { PayloadRequest } from 'payload'
 import { slateToHtml, payloadSlateToHtmlConfig } from '@slate-serializers/html'
 import { buildHtmlEmailTemplate } from './htmlEmailTemplate'
-import { extractObject } from '@/lib/extractID'
 
 type MailTemplateType = 'verify' | 'forgotPassword'
 
@@ -72,16 +71,12 @@ export const generateMail = async ({
   const selectFields =
     type === 'verify'
       ? {
-          headerLogo: true as const,
-          footerLogo: true as const,
           verify: {
             subject: true as const,
             content: true as const,
           },
         }
       : {
-          headerLogo: true as const,
-          footerLogo: true as const,
           forgotPassword: {
             subject: true as const,
             content: true as const,
@@ -102,8 +97,6 @@ export const generateMail = async ({
     return (
       typeof obj === 'object' &&
       obj !== null &&
-      'headerLogo' in obj &&
-      'footerLogo' in obj &&
       'fromEmail' in obj
     )
   }
@@ -134,27 +127,11 @@ export const generateMail = async ({
     content = buildHtmlBody(contentForHtml, placeholders)
   }
 
-  const headerLogoObj = extractObject(mail.headerLogo)
-  const footerLogoObj = extractObject(mail.footerLogo)
-
-  // Type guard for logo objects with sizes
-  function getLogoUrl(logo: unknown): string {
-    if (!logo) return ''
-    if (typeof logo === 'string') return logo
-    if (typeof logo === 'object' && logo !== null) {
-      const logoObj = logo as { sizes?: { mail?: { url?: string } }; url?: string }
-      return logoObj.sizes?.mail?.url || logoObj.url || ''
-    }
-    return ''
-  }
-
   return {
     subject,
     body: await buildHtmlEmailTemplate({
       title: subject,
       body: content,
-      headerLogoUrl: getLogoUrl(headerLogoObj),
-      footerLogoUrl: getLogoUrl(footerLogoObj),
     }),
   }
 }

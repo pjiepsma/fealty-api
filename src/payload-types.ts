@@ -472,7 +472,15 @@ export interface Challenge {
   /**
    * Type of challenge objective
    */
-  challengeType: 'entry_count' | 'crown_count' | 'crown_takeover' | 'crown_reclaim';
+  challengeType:
+    | 'entry_count'
+    | 'crown_claim'
+    | 'session_duration'
+    | 'longest_session'
+    | 'unique_pois'
+    | 'category_variety'
+    | 'category_similarity'
+    | 'new_location';
   /**
    * Target value (e.g., 5 entries, 3 crowns)
    */
@@ -976,25 +984,72 @@ export interface ChallengeConfig {
      */
     easy: number;
     /**
-     * Medium: target value (e.g., 3 entries)
+     * Medium: target value (e.g., 1 entry)
      */
     medium: number;
     /**
-     * Hard: target value (e.g., 5 entries)
+     * Hard: target value (e.g., 2 entries)
      */
     hard: number;
   };
-  dailyCrownCount: {
+  dailyCrownClaim: {
     easy: number;
     medium: number;
     hard: number;
   };
-  dailyCrownTakeover: {
+  dailySessionDuration: {
+    /**
+     * Easy: target value in seconds (e.g., 900 = 15 minutes)
+     */
+    easy: number;
+    /**
+     * Medium: target value in seconds (e.g., 1800 = 30 minutes)
+     */
+    medium: number;
+    /**
+     * Hard: target value in seconds (e.g., 3600 = 60 minutes)
+     */
+    hard: number;
+  };
+  dailyLongestSession: {
+    /**
+     * Easy: target value in seconds (e.g., 300 = 5 minutes)
+     */
+    easy: number;
+    /**
+     * Medium: target value in seconds (e.g., 600 = 10 minutes)
+     */
+    medium: number;
+    /**
+     * Hard: target value in seconds (e.g., 900 = 15 minutes). Maximum 60 minutes for daily challenges.
+     */
+    hard: number;
+  };
+  dailyUniquePois: {
     easy: number;
     medium: number;
     hard: number;
   };
-  dailyCrownReclaim: {
+  dailyCategoryVariety: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  dailyCategorySimilarity: {
+    /**
+     * Easy: target value (e.g., 1 session at same category)
+     */
+    easy: number;
+    /**
+     * Medium: target value (e.g., 2 sessions at same category)
+     */
+    medium: number;
+    /**
+     * Hard: target value (e.g., 3 sessions at same category)
+     */
+    hard: number;
+  };
+  dailyNewLocation: {
     easy: number;
     medium: number;
     hard: number;
@@ -1004,17 +1059,64 @@ export interface ChallengeConfig {
     medium: number;
     hard: number;
   };
-  weeklyCrownCount: {
+  weeklyCrownClaim: {
     easy: number;
     medium: number;
     hard: number;
   };
-  weeklyCrownTakeover: {
+  weeklySessionDuration: {
+    /**
+     * Easy: target value in seconds (e.g., 5400 = 90 minutes)
+     */
+    easy: number;
+    /**
+     * Medium: target value in seconds (e.g., 10800 = 180 minutes)
+     */
+    medium: number;
+    /**
+     * Hard: target value in seconds (e.g., 21600 = 360 minutes)
+     */
+    hard: number;
+  };
+  weeklyLongestSession: {
+    /**
+     * Easy: target value in seconds (e.g., 600 = 10 minutes)
+     */
+    easy: number;
+    /**
+     * Medium: target value in seconds (e.g., 1200 = 20 minutes)
+     */
+    medium: number;
+    /**
+     * Hard: target value in seconds (e.g., 1800 = 30 minutes). Maximum 60 minutes.
+     */
+    hard: number;
+  };
+  weeklyUniquePois: {
     easy: number;
     medium: number;
     hard: number;
   };
-  weeklyCrownReclaim: {
+  weeklyCategoryVariety: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  weeklyCategorySimilarity: {
+    /**
+     * Easy: target value (e.g., 3 sessions at same category)
+     */
+    easy: number;
+    /**
+     * Medium: target value (e.g., 5 sessions at same category)
+     */
+    medium: number;
+    /**
+     * Hard: target value (e.g., 7 sessions at same category)
+     */
+    hard: number;
+  };
+  weeklyNewLocation: {
     easy: number;
     medium: number;
     hard: number;
@@ -1024,17 +1126,64 @@ export interface ChallengeConfig {
     medium: number;
     hard: number;
   };
-  monthlyCrownCount: {
+  monthlyCrownClaim: {
     easy: number;
     medium: number;
     hard: number;
   };
-  monthlyCrownTakeover: {
+  monthlySessionDuration: {
+    /**
+     * Easy: target value in seconds (e.g., 21600 = 360 minutes)
+     */
+    easy: number;
+    /**
+     * Medium: target value in seconds (e.g., 43200 = 720 minutes)
+     */
+    medium: number;
+    /**
+     * Hard: target value in seconds (e.g., 86400 = 1440 minutes)
+     */
+    hard: number;
+  };
+  monthlyLongestSession: {
+    /**
+     * Easy: target value in seconds (e.g., 1200 = 20 minutes). Maximum 60 minutes.
+     */
+    easy: number;
+    /**
+     * Medium: target value in seconds (e.g., 2400 = 40 minutes). Maximum 60 minutes.
+     */
+    medium: number;
+    /**
+     * Hard: target value in seconds (e.g., 3600 = 60 minutes). Maximum 60 minutes.
+     */
+    hard: number;
+  };
+  monthlyUniquePois: {
     easy: number;
     medium: number;
     hard: number;
   };
-  monthlyCrownReclaim: {
+  monthlyCategoryVariety: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  monthlyCategorySimilarity: {
+    /**
+     * Easy: target value (e.g., 8 sessions at same category)
+     */
+    easy: number;
+    /**
+     * Medium: target value (e.g., 12 sessions at same category)
+     */
+    medium: number;
+    /**
+     * Hard: target value (e.g., 20 sessions at same category)
+     */
+    hard: number;
+  };
+  monthlyNewLocation: {
     easy: number;
     medium: number;
     hard: number;
@@ -1045,26 +1194,51 @@ export interface ChallengeConfig {
      */
     entryCount: string;
     /**
-     * Template for crown count challenges
+     * Template for crown claim challenges
      */
-    crownCount: string;
+    crownClaim: string;
     /**
      * Template for crown takeover challenges
      */
     crownTakeover: string;
     /**
-     * Template for crown reclaim challenges
+     * Template for session duration challenges
      */
-    crownReclaim: string;
+    sessionDuration: string;
+    /**
+     * Template for longest session challenges
+     */
+    longestSession: string;
+    /**
+     * Template for unique POIs challenges
+     */
+    uniquePois: string;
+    /**
+     * Template for category variety challenges
+     */
+    categoryVariety: string;
+    /**
+     * Template for category similarity challenges
+     */
+    categorySimilarity: string;
+    /**
+     * Template for new location challenges
+     */
+    newLocation: string;
   };
   descriptionTemplates: {
     /**
      * Template for entry count challenge descriptions
      */
     entryCount: string;
-    crownCount: string;
+    crownClaim: string;
     crownTakeover: string;
-    crownReclaim: string;
+    sessionDuration: string;
+    longestSession: string;
+    uniquePois: string;
+    categoryVariety: string;
+    categorySimilarity: string;
+    newLocation: string;
   };
   costMultipliers: {
     /**
@@ -1099,8 +1273,6 @@ export interface ChallengeConfig {
  */
 export interface Mail {
   id: string;
-  headerLogo: string | Media;
-  footerLogo: string | Media;
   fromEmail: string;
   fromName: string;
   verify?: {
@@ -1187,21 +1359,49 @@ export interface ChallengeConfigSelect<T extends boolean = true> {
         medium?: T;
         hard?: T;
       };
-  dailyCrownCount?:
+  dailyCrownClaim?:
     | T
     | {
         easy?: T;
         medium?: T;
         hard?: T;
       };
-  dailyCrownTakeover?:
+  dailySessionDuration?:
     | T
     | {
         easy?: T;
         medium?: T;
         hard?: T;
       };
-  dailyCrownReclaim?:
+  dailyLongestSession?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  dailyUniquePois?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  dailyCategoryVariety?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  dailyCategorySimilarity?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  dailyNewLocation?:
     | T
     | {
         easy?: T;
@@ -1215,21 +1415,49 @@ export interface ChallengeConfigSelect<T extends boolean = true> {
         medium?: T;
         hard?: T;
       };
-  weeklyCrownCount?:
+  weeklyCrownClaim?:
     | T
     | {
         easy?: T;
         medium?: T;
         hard?: T;
       };
-  weeklyCrownTakeover?:
+  weeklySessionDuration?:
     | T
     | {
         easy?: T;
         medium?: T;
         hard?: T;
       };
-  weeklyCrownReclaim?:
+  weeklyLongestSession?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  weeklyUniquePois?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  weeklyCategoryVariety?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  weeklyCategorySimilarity?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  weeklyNewLocation?:
     | T
     | {
         easy?: T;
@@ -1243,21 +1471,49 @@ export interface ChallengeConfigSelect<T extends boolean = true> {
         medium?: T;
         hard?: T;
       };
-  monthlyCrownCount?:
+  monthlyCrownClaim?:
     | T
     | {
         easy?: T;
         medium?: T;
         hard?: T;
       };
-  monthlyCrownTakeover?:
+  monthlySessionDuration?:
     | T
     | {
         easy?: T;
         medium?: T;
         hard?: T;
       };
-  monthlyCrownReclaim?:
+  monthlyLongestSession?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  monthlyUniquePois?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  monthlyCategoryVariety?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  monthlyCategorySimilarity?:
+    | T
+    | {
+        easy?: T;
+        medium?: T;
+        hard?: T;
+      };
+  monthlyNewLocation?:
     | T
     | {
         easy?: T;
@@ -1268,17 +1524,27 @@ export interface ChallengeConfigSelect<T extends boolean = true> {
     | T
     | {
         entryCount?: T;
-        crownCount?: T;
+        crownClaim?: T;
         crownTakeover?: T;
-        crownReclaim?: T;
+        sessionDuration?: T;
+        longestSession?: T;
+        uniquePois?: T;
+        categoryVariety?: T;
+        categorySimilarity?: T;
+        newLocation?: T;
       };
   descriptionTemplates?:
     | T
     | {
         entryCount?: T;
-        crownCount?: T;
+        crownClaim?: T;
         crownTakeover?: T;
-        crownReclaim?: T;
+        sessionDuration?: T;
+        longestSession?: T;
+        uniquePois?: T;
+        categoryVariety?: T;
+        categorySimilarity?: T;
+        newLocation?: T;
       };
   costMultipliers?:
     | T
@@ -1303,8 +1569,6 @@ export interface ChallengeConfigSelect<T extends boolean = true> {
  * via the `definition` "mail_select".
  */
 export interface MailSelect<T extends boolean = true> {
-  headerLogo?: T;
-  footerLogo?: T;
   fromEmail?: T;
   fromName?: T;
   verify?:

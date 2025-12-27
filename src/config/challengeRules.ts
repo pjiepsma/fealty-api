@@ -1,6 +1,6 @@
 import type { PayloadRequest } from 'payload'
 
-export type ChallengeType = 'entry_count' | 'crown_count' | 'crown_takeover' | 'crown_reclaim'
+export type ChallengeType = 'entry_count' | 'crown_claim' | 'session_duration' | 'longest_session' | 'unique_pois' | 'category_variety' | 'category_similarity' | 'new_location'
 export type Period = 'daily' | 'weekly' | 'monthly'
 export type DifficultyTier = 'easy' | 'medium' | 'hard'
 
@@ -161,16 +161,26 @@ export function generateTitle(
 ): string {
   const templates: Record<ChallengeType, string> = {
     entry_count: 'Complete {targetValue} {period} {category}',
-    crown_count: 'Become king of {targetValue} POI{plural}',
-    crown_takeover: 'Take over {targetValue} crown{plural}',
-    crown_reclaim: 'Reclaim {targetValue} of your lost crown{plural}',
+    crown_claim: 'Get {targetValue} new crown{plural}',
+    session_duration: 'Log {targetValue} minutes of sessions',
+    longest_session: 'Complete a {targetValue} minute session',
+    unique_pois: 'Visit {targetValue} unique POI{plural}',
+    category_variety: 'Visit {targetValue} different categor{plural}',
+    category_similarity: 'Log {targetValue} session{plural} at {category}',
+    new_location: 'Discover {targetValue} new location{plural}',
   }
 
   let template = templates[challengeType]
 
+  // Convert seconds to minutes for time-based challenges
+  let displayValue = targetValue
+  if (challengeType === 'session_duration' || challengeType === 'longest_session') {
+    displayValue = Math.round(targetValue / 60) // Convert seconds to minutes
+  }
+
   // Replace placeholders
-  template = template.replace('{targetValue}', targetValue.toString())
-  template = template.replace('{plural}', targetValue === 1 ? '' : 's')
+  template = template.replace('{targetValue}', displayValue.toString())
+  template = template.replace('{plural}', displayValue === 1 ? '' : 's')
   template = template.replace('{period}', period)
   template = template.replace('{category}', category || 'entries')
 
@@ -188,11 +198,21 @@ export function generateDescription(
 ): string {
   const periodText = period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month'
 
+  // Convert seconds to minutes for time-based challenges
+  let displayValue = targetValue
+  if (challengeType === 'session_duration' || challengeType === 'longest_session') {
+    displayValue = Math.round(targetValue / 60) // Convert seconds to minutes
+  }
+
   const templates: Record<ChallengeType, string> = {
     entry_count: `Complete ${targetValue} entry${targetValue === 1 ? '' : 's'} ${periodText}${category ? ` at ${category}s` : ''}`,
-    crown_count: `Become king of ${targetValue} POI${targetValue === 1 ? '' : 's'} ${periodText}`,
-    crown_takeover: `Take over ${targetValue} crown${targetValue === 1 ? '' : 's'} from other players ${periodText}`,
-    crown_reclaim: `Reclaim ${targetValue} of your lost crown${targetValue === 1 ? '' : 's'} ${periodText}`,
+    crown_claim: `Get ${targetValue} new crown${targetValue === 1 ? '' : 's'} ${periodText}`,
+    session_duration: `Log at least ${displayValue} minutes of total session time ${periodText}`,
+    longest_session: `Complete a single session of at least ${displayValue} minutes ${periodText}`,
+    unique_pois: `Visit ${targetValue} unique POI${targetValue === 1 ? '' : 's'} ${periodText}`,
+    category_variety: `Visit ${targetValue} different categor${targetValue === 1 ? 'y' : 'ies'} ${periodText}`,
+    category_similarity: `Log ${targetValue} session${targetValue === 1 ? '' : 's'} at ${category || 'the same category'} ${periodText}`,
+    new_location: `Discover ${targetValue} new location${targetValue === 1 ? '' : 's'} (POIs with no previous sessions) ${periodText}`,
   }
 
   return templates[challengeType]

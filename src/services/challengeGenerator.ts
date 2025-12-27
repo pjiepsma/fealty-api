@@ -6,6 +6,7 @@ import {
   getChallengeCost,
   generateTitle,
   generateDescription,
+  getAvailableCategories,
 } from '../config/challengeRules'
 import { getRewardDifficulty } from '../utils/difficultyCalculator'
 
@@ -33,8 +34,8 @@ export async function generateChallengesForUser(
   const count = await getGenerationCount(req, period)
   const challenges: GeneratedChallenge[] = []
 
-  // Get available challenge types (for now, use entry_count and crown_count as primary)
-  const challengeTypes: ChallengeType[] = ['entry_count', 'crown_count', 'crown_takeover', 'crown_reclaim']
+  // Get available challenge types
+  const challengeTypes: ChallengeType[] = ['entry_count', 'crown_claim', 'session_duration', 'longest_session', 'unique_pois', 'category_variety', 'category_similarity', 'new_location']
 
   // Select difficulty tiers (aim for variety: easy, medium, hard)
   const selectedTiers = selectDifficultyTiers(count)
@@ -42,28 +43,74 @@ export async function generateChallengesForUser(
   // Calculate expiration date
   const expiresAt = calculateExpirationDate(period)
 
+  // Track used challenge types to avoid duplicates
+  const usedTypes: ChallengeType[] = []
+  const availableTypes = [...challengeTypes]
+
   // Generate challenges
   for (let i = 0; i < count && i < selectedTiers.length; i++) {
     const tier = selectedTiers[i]
-    const challengeType = challengeTypes[Math.floor(Math.random() * challengeTypes.length)]
+    
+    // If no more unique types available, break
+    if (availableTypes.length === 0) {
+      console.warn(`Cannot generate more unique challenges for ${period}, all types used`)
+      break
+    }
+
+    // Select a random challenge type from available types (excluding used ones)
+    const randomIndex = Math.floor(Math.random() * availableTypes.length)
+    const challengeType = availableTypes[randomIndex]
+    
+    // Remove selected type from available types to prevent duplicates
+    availableTypes.splice(randomIndex, 1)
+    usedTypes.push(challengeType)
 
     // Get target value from config
-    const targetValue = await getChallengePreset(req, challengeType, period, tier)
+    let targetValue = await getChallengePreset(req, challengeType, period, tier)
 
     if (!targetValue) {
       console.warn(`No preset found for ${challengeType} ${period} ${tier}, skipping`)
       continue
     }
 
-    // Get reward difficulty
-    const rewardDifficulty = getRewardDifficulty(tier)
+    // Validate challenge limits
+    if (challengeType === 'longest_session') {
+      // Longest session: maximum 60 minutes (3600 seconds) for all periods
+      const maxSeconds = 3600 // 60 minutes
+      if (targetValue > maxSeconds) {
+        console.warn(`${period} ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`)
+        targetValue = maxSeconds
+      }
+    } else if (period === 'daily' && challengeType === 'session_duration') {
+      // Daily session duration: maximum 60 minutes (3600 seconds)
+      const maxSeconds = 3600 // 60 minutes
+      if (targetValue > maxSeconds) {
+        console.warn(`Daily ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`)
+        targetValue = maxSeconds
+      }
+    }
+
+    // Select category for category-specific challenges (before calculating reward difficulty)
+    let targetCategory: string | undefined
+    let categoryAdjustment = 0
+    if (challengeType === 'category_similarity' || challengeType === 'entry_count') {
+      const categories = await getAvailableCategories(req)
+      if (categories.length > 0) {
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)]
+        targetCategory = randomCategory.category
+        categoryAdjustment = randomCategory.difficultyAdjustment || 0
+      }
+    }
+
+    // Get reward difficulty (based on period, with category adjustment if applicable)
+    const rewardDifficulty = getRewardDifficulty(tier, categoryAdjustment, period)
 
     // Get cost
     const cost = await getChallengeCost(req, tier)
 
     // Generate title and description
-    const title = generateTitle(challengeType, targetValue, period)
-    const description = generateDescription(challengeType, targetValue, period)
+    const title = generateTitle(challengeType, targetValue, period, targetCategory)
+    const description = generateDescription(challengeType, targetValue, period, targetCategory)
 
     challenges.push({
       type: period,
@@ -71,6 +118,7 @@ export async function generateChallengesForUser(
       description,
       challengeType,
       targetValue,
+      targetCategory,
       rewardDifficulty,
       cost,
       isPersonal: period === 'daily', // Daily challenges are personal
@@ -92,7 +140,7 @@ export async function generateSharedChallenges(
   const challenges: GeneratedChallenge[] = []
 
   // Get available challenge types
-  const challengeTypes: ChallengeType[] = ['entry_count', 'crown_count', 'crown_takeover', 'crown_reclaim']
+  const challengeTypes: ChallengeType[] = ['entry_count', 'crown_claim', 'session_duration', 'longest_session', 'unique_pois', 'category_variety', 'category_similarity', 'new_location']
 
   // Select difficulty tiers
   const selectedTiers = selectDifficultyTiers(count)
@@ -106,22 +154,51 @@ export async function generateSharedChallenges(
     const challengeType = challengeTypes[Math.floor(Math.random() * challengeTypes.length)]
 
     // Get target value from config
-    const targetValue = await getChallengePreset(req, challengeType, period, tier)
+    let targetValue = await getChallengePreset(req, challengeType, period, tier)
 
     if (!targetValue) {
       console.warn(`No preset found for ${challengeType} ${period} ${tier}, skipping`)
       continue
     }
 
-    // Get reward difficulty
-    const rewardDifficulty = getRewardDifficulty(tier)
+    // Validate challenge limits
+    if (challengeType === 'longest_session') {
+      // Longest session: maximum 60 minutes (3600 seconds) for all periods
+      const maxSeconds = 3600 // 60 minutes
+      if (targetValue > maxSeconds) {
+        console.warn(`${period} ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`)
+        targetValue = maxSeconds
+      }
+    } else if (period === 'daily' && challengeType === 'session_duration') {
+      // Daily session duration: maximum 60 minutes (3600 seconds)
+      const maxSeconds = 3600 // 60 minutes
+      if (targetValue > maxSeconds) {
+        console.warn(`Daily ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`)
+        targetValue = maxSeconds
+      }
+    }
+
+    // Select category for category-specific challenges (before calculating reward difficulty)
+    let targetCategory: string | undefined
+    let categoryAdjustment = 0
+    if (challengeType === 'category_similarity' || challengeType === 'entry_count') {
+      const categories = await getAvailableCategories(req)
+      if (categories.length > 0) {
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)]
+        targetCategory = randomCategory.category
+        categoryAdjustment = randomCategory.difficultyAdjustment || 0
+      }
+    }
+
+    // Get reward difficulty (based on period, with category adjustment if applicable)
+    const rewardDifficulty = getRewardDifficulty(tier, categoryAdjustment, period)
 
     // Get cost
     const cost = await getChallengeCost(req, tier)
 
     // Generate title and description
-    const title = generateTitle(challengeType, targetValue, period)
-    const description = generateDescription(challengeType, targetValue, period)
+    const title = generateTitle(challengeType, targetValue, period, targetCategory)
+    const description = generateDescription(challengeType, targetValue, period, targetCategory)
 
     challenges.push({
       type: period,
@@ -129,6 +206,7 @@ export async function generateSharedChallenges(
       description,
       challengeType,
       targetValue,
+      targetCategory,
       rewardDifficulty,
       cost,
       isPersonal: false, // Shared challenges
@@ -202,6 +280,7 @@ function shuffleArray<T>(array: T[]): T[] {
   }
   return shuffled
 }
+
 
 
 

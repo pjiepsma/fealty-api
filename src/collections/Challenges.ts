@@ -83,9 +83,13 @@ export const Challenges: CollectionConfig = {
       required: true,
       options: [
         { label: 'Entry Count', value: 'entry_count' },
-        { label: 'Crown Count', value: 'crown_count' },
-        { label: 'Crown Takeover', value: 'crown_takeover' },
-        { label: 'Crown Reclaim', value: 'crown_reclaim' },
+        { label: 'Crown Claim', value: 'crown_claim' },
+        { label: 'Session Duration', value: 'session_duration' },
+        { label: 'Longest Session', value: 'longest_session' },
+        { label: 'Unique POIs', value: 'unique_pois' },
+        { label: 'Category Variety', value: 'category_variety' },
+        { label: 'Category Similarity', value: 'category_similarity' },
+        { label: 'New Location', value: 'new_location' },
       ],
       admin: {
         description: 'Type of challenge objective',
@@ -192,7 +196,4 @@ export const Challenges: CollectionConfig = {
     },
   ],
 }
-
-
-
 

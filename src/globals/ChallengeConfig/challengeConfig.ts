@@ -69,76 +69,203 @@ export const ChallengeConfig: GlobalConfig = {
                   name: 'medium',
                   type: 'number',
                   required: true,
-                  defaultValue: 3,
+                  defaultValue: 1,
                   admin: {
-                    description: 'Medium: target value (e.g., 3 entries)',
+                    description: 'Medium: target value (e.g., 1 entry)',
                   },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 2,
+                  admin: {
+                    description: 'Hard: target value (e.g., 2 entries)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'dailyCrownClaim',
+              type: 'group',
+              label: 'Crown Claim',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 1,
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 2,
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 3,
+                },
+              ],
+            },
+            {
+              name: 'dailySessionDuration',
+              type: 'group',
+              label: 'Session Duration',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 900,
+                  admin: {
+                    description: 'Easy: target value in seconds (e.g., 900 = 15 minutes)',
+                  },
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 1800,
+                  admin: {
+                    description: 'Medium: target value in seconds (e.g., 1800 = 30 minutes)',
+                  },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 3600,
+                  admin: {
+                    description: 'Hard: target value in seconds (e.g., 3600 = 60 minutes)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'dailyLongestSession',
+              type: 'group',
+              label: 'Longest Session',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 300,
+                  admin: {
+                    description: 'Easy: target value in seconds (e.g., 300 = 5 minutes)',
+                  },
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 600,
+                  admin: {
+                    description: 'Medium: target value in seconds (e.g., 600 = 10 minutes)',
+                  },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 900,
+                  admin: {
+                    description: 'Hard: target value in seconds (e.g., 900 = 15 minutes). Maximum 60 minutes for daily challenges.',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'dailyUniquePois',
+              type: 'group',
+              label: 'Unique POIs',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 2,
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 3,
                 },
                 {
                   name: 'hard',
                   type: 'number',
                   required: true,
                   defaultValue: 5,
+                },
+              ],
+            },
+            {
+              name: 'dailyCategoryVariety',
+              type: 'group',
+              label: 'Category Variety',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 1,
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 2,
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 3,
+                },
+              ],
+            },
+            {
+              name: 'dailyCategorySimilarity',
+              type: 'group',
+              label: 'Category Similarity',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 1,
                   admin: {
-                    description: 'Hard: target value (e.g., 5 entries)',
+                    description: 'Easy: target value (e.g., 1 session at same category)',
+                  },
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 2,
+                  admin: {
+                    description: 'Medium: target value (e.g., 2 sessions at same category)',
+                  },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 3,
+                  admin: {
+                    description: 'Hard: target value (e.g., 3 sessions at same category)',
                   },
                 },
               ],
             },
             {
-              name: 'dailyCrownCount',
+              name: 'dailyNewLocation',
               type: 'group',
-              label: 'Crown Count',
-              fields: [
-                {
-                  name: 'easy',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 1,
-                },
-                {
-                  name: 'medium',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 2,
-                },
-                {
-                  name: 'hard',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 3,
-                },
-              ],
-            },
-            {
-              name: 'dailyCrownTakeover',
-              type: 'group',
-              label: 'Crown Takeover',
-              fields: [
-                {
-                  name: 'easy',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 1,
-                },
-                {
-                  name: 'medium',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 2,
-                },
-                {
-                  name: 'hard',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 3,
-                },
-              ],
-            },
-            {
-              name: 'dailyCrownReclaim',
-              type: 'group',
-              label: 'Crown Reclaim',
+              label: 'New Location',
               fields: [
                 {
                   name: 'easy',
@@ -174,26 +301,144 @@ export const ChallengeConfig: GlobalConfig = {
                   name: 'easy',
                   type: 'number',
                   required: true,
-                  defaultValue: 10,
+                  defaultValue: 5,
                 },
                 {
                   name: 'medium',
                   type: 'number',
                   required: true,
-                  defaultValue: 25,
+                  defaultValue: 10,
                 },
                 {
                   name: 'hard',
                   type: 'number',
                   required: true,
-                  defaultValue: 50,
+                  defaultValue: 20,
                 },
               ],
             },
             {
-              name: 'weeklyCrownCount',
+              name: 'weeklyCrownClaim',
               type: 'group',
-              label: 'Crown Count',
+              label: 'Crown Claim',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 2,
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 3,
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 5,
+                },
+              ],
+            },
+            {
+              name: 'weeklySessionDuration',
+              type: 'group',
+              label: 'Session Duration',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 5400,
+                  admin: {
+                    description: 'Easy: target value in seconds (e.g., 5400 = 90 minutes)',
+                  },
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 10800,
+                  admin: {
+                    description: 'Medium: target value in seconds (e.g., 10800 = 180 minutes)',
+                  },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 21600,
+                  admin: {
+                    description: 'Hard: target value in seconds (e.g., 21600 = 360 minutes)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'weeklyLongestSession',
+              type: 'group',
+              label: 'Longest Session',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 600,
+                  admin: {
+                    description: 'Easy: target value in seconds (e.g., 600 = 10 minutes)',
+                  },
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 1200,
+                  admin: {
+                    description: 'Medium: target value in seconds (e.g., 1200 = 20 minutes)',
+                  },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 1800,
+                  admin: {
+                    description: 'Hard: target value in seconds (e.g., 1800 = 30 minutes). Maximum 60 minutes.',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'weeklyUniquePois',
+              type: 'group',
+              label: 'Unique POIs',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 5,
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 10,
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 15,
+                },
+              ],
+            },
+            {
+              name: 'weeklyCategoryVariety',
+              type: 'group',
+              label: 'Category Variety',
               fields: [
                 {
                   name: 'easy',
@@ -205,20 +450,54 @@ export const ChallengeConfig: GlobalConfig = {
                   name: 'medium',
                   type: 'number',
                   required: true,
-                  defaultValue: 5,
+                  defaultValue: 4,
                 },
                 {
                   name: 'hard',
                   type: 'number',
                   required: true,
-                  defaultValue: 10,
+                  defaultValue: 6,
                 },
               ],
             },
             {
-              name: 'weeklyCrownTakeover',
+              name: 'weeklyCategorySimilarity',
               type: 'group',
-              label: 'Crown Takeover',
+              label: 'Category Similarity',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 3,
+                  admin: {
+                    description: 'Easy: target value (e.g., 3 sessions at same category)',
+                  },
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 5,
+                  admin: {
+                    description: 'Medium: target value (e.g., 5 sessions at same category)',
+                  },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 7,
+                  admin: {
+                    description: 'Hard: target value (e.g., 7 sessions at same category)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'weeklyNewLocation',
+              type: 'group',
+              label: 'New Location',
               fields: [
                 {
                   name: 'easy',
@@ -230,38 +509,13 @@ export const ChallengeConfig: GlobalConfig = {
                   name: 'medium',
                   type: 'number',
                   required: true,
-                  defaultValue: 5,
+                  defaultValue: 3,
                 },
                 {
                   name: 'hard',
                   type: 'number',
                   required: true,
-                  defaultValue: 8,
-                },
-              ],
-            },
-            {
-              name: 'weeklyCrownReclaim',
-              type: 'group',
-              label: 'Crown Reclaim',
-              fields: [
-                {
-                  name: 'easy',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 2,
-                },
-                {
-                  name: 'medium',
-                  type: 'number',
-                  required: true,
                   defaultValue: 5,
-                },
-                {
-                  name: 'hard',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 10,
                 },
               ],
             },
@@ -279,76 +533,26 @@ export const ChallengeConfig: GlobalConfig = {
                   name: 'easy',
                   type: 'number',
                   required: true,
+                  defaultValue: 25,
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
                   defaultValue: 50,
                 },
                 {
-                  name: 'medium',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 100,
-                },
-                {
                   name: 'hard',
                   type: 'number',
                   required: true,
-                  defaultValue: 150,
+                  defaultValue: 75,
                 },
               ],
             },
             {
-              name: 'monthlyCrownCount',
+              name: 'monthlyCrownClaim',
               type: 'group',
-              label: 'Crown Count',
-              fields: [
-                {
-                  name: 'easy',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 10,
-                },
-                {
-                  name: 'medium',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 20,
-                },
-                {
-                  name: 'hard',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 30,
-                },
-              ],
-            },
-            {
-              name: 'monthlyCrownTakeover',
-              type: 'group',
-              label: 'Crown Takeover',
-              fields: [
-                {
-                  name: 'easy',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 10,
-                },
-                {
-                  name: 'medium',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 20,
-                },
-                {
-                  name: 'hard',
-                  type: 'number',
-                  required: true,
-                  defaultValue: 30,
-                },
-              ],
-            },
-            {
-              name: 'monthlyCrownReclaim',
-              type: 'group',
-              label: 'Crown Reclaim',
+              label: 'Crown Claim',
               fields: [
                 {
                   name: 'easy',
@@ -360,13 +564,190 @@ export const ChallengeConfig: GlobalConfig = {
                   name: 'medium',
                   type: 'number',
                   required: true,
-                  defaultValue: 15,
+                  defaultValue: 10,
                 },
                 {
                   name: 'hard',
                   type: 'number',
                   required: true,
+                  defaultValue: 15,
+                },
+              ],
+            },
+            {
+              name: 'monthlySessionDuration',
+              type: 'group',
+              label: 'Session Duration',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 21600,
+                  admin: {
+                    description: 'Easy: target value in seconds (e.g., 21600 = 360 minutes)',
+                  },
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 43200,
+                  admin: {
+                    description: 'Medium: target value in seconds (e.g., 43200 = 720 minutes)',
+                  },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 86400,
+                  admin: {
+                    description: 'Hard: target value in seconds (e.g., 86400 = 1440 minutes)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'monthlyLongestSession',
+              type: 'group',
+              label: 'Longest Session',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 1200,
+                  admin: {
+                    description: 'Easy: target value in seconds (e.g., 1200 = 20 minutes). Maximum 60 minutes.',
+                  },
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 2400,
+                  admin: {
+                    description: 'Medium: target value in seconds (e.g., 2400 = 40 minutes). Maximum 60 minutes.',
+                  },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 3600,
+                  admin: {
+                    description: 'Hard: target value in seconds (e.g., 3600 = 60 minutes). Maximum 60 minutes.',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'monthlyUniquePois',
+              type: 'group',
+              label: 'Unique POIs',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
                   defaultValue: 25,
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 50,
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 75,
+                },
+              ],
+            },
+            {
+              name: 'monthlyCategoryVariety',
+              type: 'group',
+              label: 'Category Variety',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 4,
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 5,
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 6,
+                },
+              ],
+            },
+            {
+              name: 'monthlyCategorySimilarity',
+              type: 'group',
+              label: 'Category Similarity',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 8,
+                  admin: {
+                    description: 'Easy: target value (e.g., 8 sessions at same category)',
+                  },
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 12,
+                  admin: {
+                    description: 'Medium: target value (e.g., 12 sessions at same category)',
+                  },
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 20,
+                  admin: {
+                    description: 'Hard: target value (e.g., 20 sessions at same category)',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'monthlyNewLocation',
+              type: 'group',
+              label: 'New Location',
+              fields: [
+                {
+                  name: 'easy',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 5,
+                },
+                {
+                  name: 'medium',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 10,
+                },
+                {
+                  name: 'hard',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 15,
                 },
               ],
             },
@@ -390,12 +771,12 @@ export const ChallengeConfig: GlobalConfig = {
                   },
                 },
                 {
-                  name: 'crownCount',
+                  name: 'crownClaim',
                   type: 'text',
                   required: true,
-                  defaultValue: 'Become king of {targetValue} POI{plural}',
+                  defaultValue: 'Get {targetValue} new crown{plural}',
                   admin: {
-                    description: 'Template for crown count challenges',
+                    description: 'Template for crown claim challenges',
                   },
                 },
                 {
@@ -408,12 +789,57 @@ export const ChallengeConfig: GlobalConfig = {
                   },
                 },
                 {
-                  name: 'crownReclaim',
+                  name: 'sessionDuration',
                   type: 'text',
                   required: true,
-                  defaultValue: 'Reclaim {targetValue} of your lost crown{plural}',
+                  defaultValue: 'Log {targetValue} minutes of sessions',
                   admin: {
-                    description: 'Template for crown reclaim challenges',
+                    description: 'Template for session duration challenges',
+                  },
+                },
+                {
+                  name: 'longestSession',
+                  type: 'text',
+                  required: true,
+                  defaultValue: 'Complete a {targetValue} minute session',
+                  admin: {
+                    description: 'Template for longest session challenges',
+                  },
+                },
+                {
+                  name: 'uniquePois',
+                  type: 'text',
+                  required: true,
+                  defaultValue: 'Visit {targetValue} unique POI{plural}',
+                  admin: {
+                    description: 'Template for unique POIs challenges',
+                  },
+                },
+                {
+                  name: 'categoryVariety',
+                  type: 'text',
+                  required: true,
+                  defaultValue: 'Visit {targetValue} different categor{plural}',
+                  admin: {
+                    description: 'Template for category variety challenges',
+                  },
+                },
+                {
+                  name: 'categorySimilarity',
+                  type: 'text',
+                  required: true,
+                  defaultValue: 'Log {targetValue} session{plural} at {category}',
+                  admin: {
+                    description: 'Template for category similarity challenges',
+                  },
+                },
+                {
+                  name: 'newLocation',
+                  type: 'text',
+                  required: true,
+                  defaultValue: 'Discover {targetValue} new location{plural}',
+                  admin: {
+                    description: 'Template for new location challenges',
                   },
                 },
               ],
@@ -433,10 +859,10 @@ export const ChallengeConfig: GlobalConfig = {
                   },
                 },
                 {
-                  name: 'crownCount',
+                  name: 'crownClaim',
                   type: 'textarea',
                   required: true,
-                  defaultValue: 'Become king of {targetValue} POI{plural} {periodText}',
+                  defaultValue: 'Get {targetValue} new crown{plural} {periodText}',
                 },
                 {
                   name: 'crownTakeover',
@@ -445,10 +871,40 @@ export const ChallengeConfig: GlobalConfig = {
                   defaultValue: 'Take over {targetValue} crown{plural} from other players {periodText}',
                 },
                 {
-                  name: 'crownReclaim',
+                  name: 'sessionDuration',
                   type: 'textarea',
                   required: true,
-                  defaultValue: 'Reclaim {targetValue} of your lost crown{plural} {periodText}',
+                  defaultValue: 'Log at least {targetValue} minutes of total session time {periodText}',
+                },
+                {
+                  name: 'longestSession',
+                  type: 'textarea',
+                  required: true,
+                  defaultValue: 'Complete a single session of at least {targetValue} minutes {periodText}',
+                },
+                {
+                  name: 'uniquePois',
+                  type: 'textarea',
+                  required: true,
+                  defaultValue: 'Visit {targetValue} unique POI{plural} {periodText}',
+                },
+                {
+                  name: 'categoryVariety',
+                  type: 'textarea',
+                  required: true,
+                  defaultValue: 'Visit {targetValue} different categor{plural} {periodText}',
+                },
+                {
+                  name: 'categorySimilarity',
+                  type: 'textarea',
+                  required: true,
+                  defaultValue: 'Log {targetValue} session{plural} at {category} {periodText}',
+                },
+                {
+                  name: 'newLocation',
+                  type: 'textarea',
+                  required: true,
+                  defaultValue: 'Discover {targetValue} new location{plural} (POIs with no previous sessions) {periodText}',
                 },
               ],
             },
@@ -534,6 +990,7 @@ export const ChallengeConfig: GlobalConfig = {
     },
   ],
 }
+
 
 
 

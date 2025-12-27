@@ -47,3 +47,5 @@ pnpm vercel env add ENABLE_PAYLOAD_AUTORUN development
 
 echo "Done! All environment variables added."
 
+
+
