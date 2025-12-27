@@ -70,9 +70,17 @@ The project uses Payload's built-in job scheduler for:
 
 1. **vercel.json** is already configured with a cron route
 2. Set `CRON_SECRET` in Vercel environment variables
-3. Vercel will call `/api/cron` hourly, which triggers Payload's job processor
+3. Vercel will call `/api/cron` once per day (Hobby plan limitation), which triggers Payload's job processor
 
-**Note**: Vercel's free tier only supports daily cron jobs. For hourly execution, you'll need a Pro plan or use an external cron service.
+**Hobby Plan Limitations:**
+- Maximum 2 cron jobs per account
+- Cron jobs can only run once per day
+- Timing is not guaranteed (can trigger anywhere within the scheduled hour)
+- Current schedule: `0 0 * * *` (daily at midnight UTC)
+
+**For more frequent execution:**
+- Upgrade to Pro plan for unlimited cron invocations
+- Or use an external cron service (cron-job.org, EasyCron, etc.) to call `/api/cron` more frequently
 
 ### Alternative: External Cron Service
 
