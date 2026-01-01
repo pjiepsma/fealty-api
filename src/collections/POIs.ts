@@ -80,9 +80,19 @@ export const POIs: CollectionConfig = {
         description: 'POI category (e.g., leisure, religion, tourism)',
       },
     },
+    {
+      name: 'currentKing',
+      type: 'relationship',
+      relationTo: 'users',
+      admin: {
+        description: 'User who currently has the most seconds at this POI',
+        readOnly: true,
+      },
+    },
   ],
   timestamps: true,
 }
+
 
 
 

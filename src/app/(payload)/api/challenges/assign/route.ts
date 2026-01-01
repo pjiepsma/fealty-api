@@ -273,7 +273,6 @@ export async function POST(request: NextRequest) {
           reward: randomReward.id,
           progress: 0,
           expiresAt: expiresAt.toISOString(),
-          isPersonal: true,
           cost: 0,
         },
       })
@@ -402,7 +401,6 @@ export async function POST(request: NextRequest) {
           reward: randomReward.id,
           progress: 0,
           expiresAt: expiresAt.toISOString(),
-          isPersonal: false,
           cost: 0,
         },
       })

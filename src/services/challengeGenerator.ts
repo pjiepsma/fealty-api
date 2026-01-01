@@ -19,7 +19,6 @@ export interface GeneratedChallenge {
   targetCategory?: string
   rewardDifficulty: number
   cost: number
-  isPersonal: boolean
   expiresAt: string
 }
 
@@ -121,7 +120,6 @@ export async function generateChallengesForUser(
       targetCategory,
       rewardDifficulty,
       cost,
-      isPersonal: period === 'daily', // Daily challenges are personal
       expiresAt,
     })
   }
@@ -209,7 +207,6 @@ export async function generateSharedChallenges(
       targetCategory,
       rewardDifficulty,
       cost,
-      isPersonal: false, // Shared challenges
       expiresAt,
     })
   }
@@ -280,6 +277,7 @@ function shuffleArray<T>(array: T[]): T[] {
   }
   return shuffled
 }
+
 
 
 

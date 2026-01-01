@@ -118,6 +118,9 @@ export interface Config {
       'assign-monthly-challenges': TaskAssignMonthlyChallenges;
       'expire-challenges': TaskExpireChallenges;
       'daily-decay': TaskDailyDecay;
+      'expire-old-rewards': TaskExpireOldRewards;
+      'expire-season-rewards': TaskExpireSeasonRewards;
+      'calculate-king-status': TaskCalculateKingStatus;
       inline: {
         input: unknown;
         output: unknown;
@@ -411,6 +414,10 @@ export interface Pois {
    * POI category (e.g., leisure, religion, tourism)
    */
   category: string;
+  /**
+   * User who currently has the most seconds at this POI
+   */
+  currentKing?: (string | null) | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -517,10 +524,6 @@ export interface Challenge {
    * When the challenge expires (for daily/weekly/monthly)
    */
   expiresAt: string;
-  /**
-   * True for daily challenges, false for shared weekly/monthly
-   */
-  isPersonal?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -599,7 +602,10 @@ export interface PayloadJob {
           | 'assign-weekly-challenges'
           | 'assign-monthly-challenges'
           | 'expire-challenges'
-          | 'daily-decay';
+          | 'daily-decay'
+          | 'expire-old-rewards'
+          | 'expire-season-rewards'
+          | 'calculate-king-status';
         taskID: string;
         input?:
           | {
@@ -640,6 +646,9 @@ export interface PayloadJob {
         | 'assign-monthly-challenges'
         | 'expire-challenges'
         | 'daily-decay'
+        | 'expire-old-rewards'
+        | 'expire-season-rewards'
+        | 'calculate-king-status'
       )
     | null;
   queue?: string | null;
@@ -833,6 +842,7 @@ export interface PoisSelect<T extends boolean = true> {
   longitude?: T;
   type?: T;
   category?: T;
+  currentKing?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -884,7 +894,6 @@ export interface ChallengesSelect<T extends boolean = true> {
   completedAt?: T;
   claimedAt?: T;
   expiresAt?: T;
-  isPersonal?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1634,6 +1643,30 @@ export interface TaskExpireChallenges {
  * via the `definition` "TaskDaily-decay".
  */
 export interface TaskDailyDecay {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskExpire-old-rewards".
+ */
+export interface TaskExpireOldRewards {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskExpire-season-rewards".
+ */
+export interface TaskExpireSeasonRewards {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCalculate-king-status".
+ */
+export interface TaskCalculateKingStatus {
   input?: unknown;
   output?: unknown;
 }

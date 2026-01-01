@@ -27,6 +27,93 @@ export const Sessions: CollectionConfig = {
     },
   },
   hooks: {
+    beforeValidate: [
+      async ({ data, req }) => {
+        // Early return if data is not provided
+        if (!data) {
+          return data
+        }
+        
+        // Enforce daily limit: 60 seconds max per user per POI per day
+        if (data.user && data.poi && data.startTime && data.secondsEarned) {
+          try {
+            const userId = typeof data.user === 'string' ? data.user : data.user?.id
+            const poiId = typeof data.poi === 'string' ? data.poi : data.poi?.id
+
+            if (!userId || !poiId) {
+              return data
+            }
+
+            // Get start of day for the session
+            const sessionDate = new Date(data.startTime)
+            sessionDate.setHours(0, 0, 0, 0)
+
+            // Find all sessions for this user at this POI today
+            const todaySessions = await req.payload.find({
+              collection: 'sessions',
+              where: {
+                and: [
+                  {
+                    user: {
+                      equals: userId,
+                    },
+                  },
+                  {
+                    poi: {
+                      equals: poiId,
+                    },
+                  },
+                  {
+                    startTime: {
+                      greater_than_equal: sessionDate.toISOString(),
+                    },
+                  },
+                  {
+                    startTime: {
+                      less_than: new Date(sessionDate.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+                    },
+                  },
+                ],
+              },
+              limit: 100,
+            })
+
+            // Calculate total seconds earned today at this POI
+            const dailyTotal = todaySessions.docs.reduce((sum: number, session: Session) => {
+              return sum + (session.secondsEarned || 0)
+            }, 0)
+
+            const requestedSeconds = typeof data.secondsEarned === 'number' ? data.secondsEarned : 0
+
+            // Check if adding this session would exceed daily limit
+            if (dailyTotal + requestedSeconds > 60) {
+              const remainingSeconds = 60 - dailyTotal
+              
+              if (remainingSeconds <= 0) {
+                throw new Error(
+                  `Daily limit reached for this POI. You have already earned ${dailyTotal} seconds today (max: 60 seconds).`
+                )
+              }
+
+              // Cap the seconds to the remaining allowed amount
+              data.secondsEarned = Math.max(0, remainingSeconds)
+              console.log(
+                `Capping session seconds: ${requestedSeconds}s → ${data.secondsEarned}s (${dailyTotal}s already earned today)`
+              )
+            }
+          } catch (error) {
+            // If it's our validation error, throw it
+            if (error instanceof Error && error.message.includes('Daily limit')) {
+              throw error
+            }
+            // Otherwise log and continue (don't block session creation)
+            console.error('Error validating daily limit:', error)
+          }
+        }
+
+        return data
+      },
+    ],
     afterChange: [
       async ({ doc, req, operation }) => {
         if (operation === 'create' && doc.user && doc.secondsEarned) {
@@ -164,6 +251,7 @@ export const Sessions: CollectionConfig = {
     },
   ],
 }
+
 
 
 

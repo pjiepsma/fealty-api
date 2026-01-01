@@ -21,6 +21,9 @@ import {
 } from './jobs/assignChallengesJob'
 import { expireChallengesTask } from './jobs/expireChallengesJob'
 import { dailyDecayTask } from './jobs/dailyDecayJob'
+import { expireOldRewardsTask } from './jobs/expireOldRewardsJob'
+import { expireSeasonRewardsTask } from './jobs/expireSeasonRewardsJob'
+import { calculateKingStatusTask } from './jobs/calculateKingStatusJob'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -100,6 +103,33 @@ export default buildConfig({
         schedule: [
           {
             cron: '0 0 * * *', // Every day at 00:00 UTC
+            queue: 'default',
+          },
+        ],
+      },
+      {
+        ...expireOldRewardsTask,
+        schedule: [
+          {
+            cron: '0 2 * * *', // Every day at 02:00 UTC (after daily_decay at 00:00)
+            queue: 'default',
+          },
+        ],
+      },
+      {
+        ...expireSeasonRewardsTask,
+        schedule: [
+          {
+            cron: '30 1 1 * *', // 1st of every month at 01:30 UTC (after challenge cleanup at 01:00)
+            queue: 'default',
+          },
+        ],
+      },
+      {
+        ...calculateKingStatusTask,
+        schedule: [
+          {
+            cron: '30 0 * * *', // Every day at 00:30 UTC (after daily decay at 00:00)
             queue: 'default',
           },
         ],

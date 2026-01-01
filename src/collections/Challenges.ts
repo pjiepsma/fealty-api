@@ -171,14 +171,6 @@ export const Challenges: CollectionConfig = {
         description: 'When the challenge expires (for daily/weekly/monthly)',
       },
     },
-    {
-      name: 'isPersonal',
-      type: 'checkbox',
-      defaultValue: true,
-      admin: {
-        description: 'True for daily challenges, false for shared weekly/monthly',
-      },
-    },
   ],
   timestamps: true,
   indexes: [
@@ -196,4 +188,5 @@ export const Challenges: CollectionConfig = {
     },
   ],
 }
+
 
