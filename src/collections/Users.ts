@@ -312,6 +312,7 @@ export const Users: CollectionConfig = {
       ],
       defaultValue: 'user',
       required: true,
+      saveToJWT: true, // Include in JWT for access control checks
       admin: {
         description: 'User role',
       },
