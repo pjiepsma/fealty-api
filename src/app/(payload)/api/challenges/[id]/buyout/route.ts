@@ -1,23 +1,21 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
+import type { Challenge, User, Reward } from '@/payload-types'
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const payload = await getPayload({ config })
     const body = await request.json()
     const { userId } = body
-    const challengeId = params.id
+    const { id: challengeId } = await params
 
     if (!userId) {
       return NextResponse.json(
         {
           error: 'Missing required parameter: userId',
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -33,7 +31,7 @@ export async function POST(
         {
           error: 'Challenge not found',
         },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
@@ -44,28 +42,28 @@ export async function POST(
         {
           error: 'Challenge does not belong to this user',
         },
-        { status: 403 }
+        { status: 403 },
       )
     }
 
     // Check if challenge can be bought out
-    const cost = (challenge as any).cost || 0
+    const cost = (challenge as Challenge).cost || 0
     if (cost <= 0) {
       return NextResponse.json(
         {
           error: 'This challenge cannot be bought out',
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     // Check if already completed
-    if ((challenge as any).completedAt) {
+    if ((challenge as Challenge).completedAt) {
       return NextResponse.json(
         {
           error: 'Challenge is already completed',
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -80,11 +78,12 @@ export async function POST(
         {
           error: 'User not found',
         },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
-    const userCoins = (user as any).coins || 0
+    // Note: coins field may not be in User type yet, but we'll access it safely
+    const userCoins = (user as User as { coins?: number }).coins || 0
 
     // Validate user has enough coins
     if (userCoins < cost) {
@@ -92,7 +91,7 @@ export async function POST(
         {
           error: `Not enough coins. Required: ${cost}, Available: ${userCoins}`,
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -117,51 +116,56 @@ export async function POST(
     })
 
     // Activate the reward
-    const reward = (challenge as any).reward
+    const reward = (challenge as Challenge).reward
     if (reward) {
-      const rewardData = typeof reward === 'string' ? await payload.findByID({
-        collection: 'rewards',
-        id: reward,
-      }) : reward
+      const rewardData: Reward =
+        typeof reward === 'string'
+          ? ((await payload.findByID({
+              collection: 'rewards',
+              id: reward,
+            })) as Reward)
+          : (reward as Reward)
 
       if (rewardData) {
         // Get current month for season-based rewards
         const now = new Date()
         const season = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-        
+
         // Get user's current active rewards
-        const userUpdate = await payload.findByID({
+        const userUpdate = (await payload.findByID({
           collection: 'users',
           id: userId,
-        })
+        })) as User
 
-        const activeRewards = (userUpdate as any).activeRewards || []
-        
+        // Extract ActiveReward type from User's activeRewards field (which is an array)
+        type ActiveReward = NonNullable<User['activeRewards']> extends (infer U)[] ? U : never
+
+        const existingActiveRewards = (userUpdate.activeRewards || []) as ActiveReward[]
+
         // Calculate expiry based on reward duration
         let expiresAt: string | null = null
-        if ((rewardData as any).rewardDuration) {
+        if (rewardData.rewardDuration) {
           const expiryDate = new Date()
-          expiryDate.setHours(expiryDate.getHours() + (rewardData as any).rewardDuration)
+          expiryDate.setHours(expiryDate.getHours() + rewardData.rewardDuration)
           expiresAt = expiryDate.toISOString()
         }
 
-        const activeReward = {
+        const activeReward: ActiveReward = {
           reward: typeof reward === 'string' ? reward : reward.id,
-          challenge: challengeId,
-          rewardType: (rewardData as any).rewardType,
-          rewardValue: (rewardData as any).rewardValue,
-          expiresAt,
-          season: (rewardData as any).rewardType === 'bonus_crowns' ? season : null,
-          usesRemaining: (rewardData as any).rewardUses || null,
+          challengeId: challengeId,
+          rewardType: rewardData.rewardType,
+          rewardValue: rewardData.rewardValue,
+          expiresAt: expiresAt || undefined,
+          season: rewardData.rewardType === 'bonus_crowns' ? season : undefined,
+          usesRemaining: rewardData.rewardUses || undefined,
           isActive: true,
-          createdAt: new Date().toISOString(),
-        }
+        } as ActiveReward
 
         await payload.update({
           collection: 'users',
           id: userId,
           data: {
-            activeRewards: [...activeRewards, activeReward],
+            activeRewards: [...existingActiveRewards, activeReward],
           },
         })
       }
@@ -179,8 +183,7 @@ export async function POST(
         error: 'Failed to buy out challenge',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
-

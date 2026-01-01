@@ -1,16 +1,17 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
+import type { User, Reward } from '@/payload-types'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const payload = await getPayload({ config })
     const body = await request.json()
     const { userId } = body
-    const challengeId = params.id
+    const { id: challengeId } = await params
 
     if (!userId) {
       return NextResponse.json(
@@ -49,7 +50,7 @@ export async function POST(
     }
 
     // Check if already completed
-    if ((challenge as any).completedAt) {
+    if (challenge.completedAt) {
       return NextResponse.json(
         {
           error: 'Challenge is already completed',
@@ -59,8 +60,8 @@ export async function POST(
     }
 
     // Server-side validation: Check if progress meets target
-    const progress = (challenge as any).progress || 0
-    const targetValue = (challenge as any).targetValue || 0
+    const progress = challenge.progress || 0
+    const targetValue = challenge.targetValue || 0
 
     if (progress < targetValue) {
       return NextResponse.json(
@@ -72,7 +73,7 @@ export async function POST(
     }
 
     // Check if challenge has expired
-    const expiresAt = (challenge as any).expiresAt
+    const expiresAt = challenge.expiresAt
     if (expiresAt && new Date(expiresAt) < new Date()) {
       return NextResponse.json(
         {
@@ -92,14 +93,14 @@ export async function POST(
     })
 
     // Activate the reward
-    const reward = (challenge as any).reward
+    const reward = challenge.reward
     if (reward) {
-      const rewardData = typeof reward === 'string' 
+      const rewardData: Reward = typeof reward === 'string' 
         ? await payload.findByID({
             collection: 'rewards',
             id: reward,
-          })
-        : reward
+          }) as Reward
+        : reward as Reward
 
       if (rewardData) {
         // Get current month for season-based rewards
@@ -110,29 +111,31 @@ export async function POST(
         const user = await payload.findByID({
           collection: 'users',
           id: userId,
-        })
+        }) as User
 
-        const activeRewards = (user as any).activeRewards || []
+        // Extract ActiveReward type from User's activeRewards field (which is an array)
+        type ActiveReward = NonNullable<User['activeRewards']> extends (infer U)[] ? U : never
+
+        const activeRewards = (user.activeRewards || []) as ActiveReward[]
 
         // Calculate expiry and uses
         let expiresAt: string | null = null
-        if ((rewardData as any).rewardDuration) {
+        if (rewardData.rewardDuration) {
           const expiryDate = new Date()
-          expiryDate.setHours(expiryDate.getHours() + (rewardData as any).rewardDuration)
+          expiryDate.setHours(expiryDate.getHours() + rewardData.rewardDuration)
           expiresAt = expiryDate.toISOString()
         }
 
-        const activeReward = {
+        const activeReward: ActiveReward = {
           reward: typeof reward === 'string' ? reward : reward.id,
-          challenge: challengeId,
-          rewardType: (rewardData as any).rewardType,
-          rewardValue: (rewardData as any).rewardValue,
-          expiresAt,
-          season: (rewardData as any).rewardType === 'bonus_crowns' ? season : null,
-          usesRemaining: (rewardData as any).rewardUses || null,
+          challengeId: challengeId,
+          rewardType: rewardData.rewardType,
+          rewardValue: rewardData.rewardValue,
+          expiresAt: expiresAt || undefined,
+          season: rewardData.rewardType === 'bonus_crowns' ? season : undefined,
+          usesRemaining: rewardData.rewardUses || undefined,
           isActive: true,
-          createdAt: new Date().toISOString(),
-        }
+        } as ActiveReward
 
         await payload.update({
           collection: 'users',
