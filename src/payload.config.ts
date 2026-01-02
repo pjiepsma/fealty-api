@@ -49,15 +49,19 @@ export default buildConfig({
   globals: [ChallengeConfig, Mail],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
-  serverURL: process.env.PAYLOAD_SERVER_URL,
+  serverURL:
+    process.env.PAYLOAD_SERVER_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined),
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || process.env.DATABASE_URL || '',
   }),
-  cors: process.env.PAYLOAD_PUBLIC_CORS_CSRF_URLS?.split(','),
-  csrf: process.env.PAYLOAD_PUBLIC_CORS_CSRF_URLS?.split(','),
+  ...(process.env.PAYLOAD_PUBLIC_CORS_CSRF_URLS && {
+    cors: process.env.PAYLOAD_PUBLIC_CORS_CSRF_URLS.split(','),
+    csrf: process.env.PAYLOAD_PUBLIC_CORS_CSRF_URLS.split(','),
+  }),
   sharp,
   email: getSelectedEmailAdapter(),
   jobs: {
