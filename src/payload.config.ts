@@ -56,8 +56,8 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || process.env.DATABASE_URL || '',
   }),
-  cors: process.env.PAYLOAD_PUBLIC_CORS_CSRF_URLS?.split(',').filter((url): url is string => typeof url === 'string' && url.length > 0) || ['*'],
-  csrf: process.env.PAYLOAD_PUBLIC_CORS_CSRF_URLS?.split(',').filter((url): url is string => typeof url === 'string' && url.length > 0) || ['*'],
+  cors: process.env.PAYLOAD_PUBLIC_CORS_CSRF_URLS?.split(','),
+  csrf: process.env.PAYLOAD_PUBLIC_CORS_CSRF_URLS?.split(','),
   sharp,
   email: getSelectedEmailAdapter(),
   jobs: {

@@ -7,6 +7,7 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
   },
   auth: {
+    tokenExpiration: 60 * 60 * 24 * 3, // 3 days (same as de-aandachtgevers)
     forgotPassword: {
       generateEmailHTML: async (args) => {
         if (!args || !args.req || !args.token) {
@@ -17,7 +18,11 @@ export const Users: CollectionConfig = {
           type: 'forgotPassword',
           placeholders: {
             token: args.token,
-            origin: process.env.PAYLOAD_PUBLIC_APP_DEEP_LINK || process.env.PAYLOAD_PUBLIC_SERVER_URL || process.env.PAYLOAD_SERVER_URL || '',
+            origin:
+              process.env.PAYLOAD_PUBLIC_APP_DEEP_LINK ||
+              process.env.PAYLOAD_PUBLIC_SERVER_URL ||
+              process.env.PAYLOAD_SERVER_URL ||
+              '',
           },
           req: args.req,
         })
@@ -33,7 +38,11 @@ export const Users: CollectionConfig = {
           type: 'forgotPassword',
           placeholders: {
             token: args.token,
-            origin: process.env.PAYLOAD_PUBLIC_APP_DEEP_LINK || process.env.PAYLOAD_PUBLIC_SERVER_URL || process.env.PAYLOAD_SERVER_URL || '',
+            origin:
+              process.env.PAYLOAD_PUBLIC_APP_DEEP_LINK ||
+              process.env.PAYLOAD_PUBLIC_SERVER_URL ||
+              process.env.PAYLOAD_SERVER_URL ||
+              '',
           },
           req: args.req,
         })
@@ -367,7 +376,8 @@ export const Users: CollectionConfig = {
           name: 'usesRemaining',
           type: 'number',
           admin: {
-            description: 'For use-based rewards, number of uses remaining (null for unlimited or season-based)',
+            description:
+              'For use-based rewards, number of uses remaining (null for unlimited or season-based)',
           },
         },
         {
@@ -390,4 +400,3 @@ export const Users: CollectionConfig = {
   ],
   timestamps: true,
 }
-
