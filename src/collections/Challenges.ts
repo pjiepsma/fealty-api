@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin } from '@/access/isAdmin'
+import { isAdminForAccess } from '@/access/isAdmin'
 
 export const Challenges: CollectionConfig = {
   slug: 'challenges',
@@ -38,7 +38,7 @@ export const Challenges: CollectionConfig = {
       // Only admins can delete challenges
       return user.role === 'admin'
     },
-    admin: isAdmin,
+    admin: isAdminForAccess,
   },
   fields: [
     {

@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import type { Session } from '@/payload-types'
-import { isAdmin } from '@/access/isAdmin'
+import { isAdminForAccess } from '@/access/isAdmin'
 
 // Default daily seconds limit (fallback when game config is not available)
 const DEFAULT_DAILY_SECONDS_LIMIT = 60
@@ -29,7 +29,7 @@ export const Sessions: CollectionConfig = {
       // Only admins can delete sessions
       return user.role === 'admin'
     },
-    admin: isAdmin,
+    admin: isAdminForAccess,
   },
   hooks: {
     beforeValidate: [

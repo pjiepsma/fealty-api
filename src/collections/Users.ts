@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { generateMail } from '@/globals/Mail/utilities/sendMail'
-import { isAdmin } from '@/access/isAdmin'
+import { isAdminForAccess } from '@/access/isAdmin'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -98,7 +98,7 @@ export const Users: CollectionConfig = {
       // Only admins can delete users
       return user.role === 'admin'
     },
-    admin: isAdmin,
+    admin: isAdminForAccess,
   },
   hooks: {
     afterChange: [

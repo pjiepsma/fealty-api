@@ -1,5 +1,5 @@
 import type { GlobalConfig } from 'payload'
-import { isAdmin } from '@/access/isAdmin'
+import { isAdminForAccess } from '@/access/isAdmin'
 
 export const GameConfig: GlobalConfig = {
   slug: 'game-config',

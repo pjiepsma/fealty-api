@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin } from '@/access/isAdmin'
+import { isAdminForAccess } from '@/access/isAdmin'
 
 export const Rewards: CollectionConfig = {
   slug: 'rewards',
@@ -23,7 +23,7 @@ export const Rewards: CollectionConfig = {
       // Only admins can delete rewards
       return user.role === 'admin'
     },
-    admin: isAdmin,
+    admin: isAdminForAccess,
   },
   fields: [
     {

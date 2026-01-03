@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin } from '@/access/isAdmin'
+import { isAdminForAccess } from '@/access/isAdmin'
 
 export const POIs: CollectionConfig = {
   slug: 'pois',
@@ -21,7 +21,7 @@ export const POIs: CollectionConfig = {
       // Only admins can delete POIs
       return user.role === 'admin'
     },
-    admin: isAdmin,
+    admin: isAdminForAccess,
   },
   fields: [
     {
