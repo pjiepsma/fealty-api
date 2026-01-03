@@ -13,6 +13,7 @@ import { Rewards } from './collections/Rewards'
 import { Challenges } from './collections/Challenges'
 import { getSelectedEmailAdapter } from './lib/email-adapters/selectEmailAdapter'
 import { ChallengeConfig } from './globals/ChallengeConfig/challengeConfig'
+import { GameConfig } from './globals/GameConfig/gameConfig'
 import { Mail } from './globals/Mail/mail'
 import {
   assignDailyChallengesTask,
@@ -38,15 +39,8 @@ export default buildConfig({
       beforeDashboard: ['/components/JobTestButtons'],
     },
   },
-  collections: [
-    Users,
-    Media,
-    POIs,
-    Sessions,
-    Rewards,
-    Challenges,
-  ],
-  globals: [ChallengeConfig, Mail],
+  collections: [Users, Media, POIs, Sessions, Rewards, Challenges],
+  globals: [ChallengeConfig, GameConfig, Mail],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   serverURL:
@@ -142,4 +136,3 @@ export default buildConfig({
   },
   plugins: [],
 })
-
