@@ -99,11 +99,13 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'challenge-config': ChallengeConfig;
+    'game-config': GameConfig;
     mail: Mail;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     'challenge-config': ChallengeConfigSelect<false> | ChallengeConfigSelect<true>;
+    'game-config': GameConfigSelect<false> | GameConfigSelect<true>;
     mail: MailSelect<false> | MailSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
@@ -1277,6 +1279,49 @@ export interface ChallengeConfig {
   createdAt?: string | null;
 }
 /**
+ * Core game mechanics and balance configuration
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "game-config".
+ */
+export interface GameConfig {
+  id: string;
+  /**
+   * Maximum seconds a user can earn per POI per day
+   */
+  dailySecondsLimit: number;
+  /**
+   * Entry mode duration in seconds (before capture starts for normal users)
+   */
+  entryDuration: number;
+  /**
+   * Entry mode duration in seconds for POI kings (reduced time)
+   */
+  kingEntryDuration: number;
+  /**
+   * Detection radius around POI in meters
+   */
+  poiRadius: number;
+  /**
+   * Maximum seconds per capture session
+   */
+  maxCaptureSeconds: number;
+  /**
+   * Bonus seconds awarded for completing a full minute (60s + bonus = total)
+   */
+  minuteBonusSeconds: number;
+  /**
+   * Default daily decay percentage applied to user totalSeconds
+   */
+  defaultDecayPercentage: number;
+  /**
+   * Maximum decay reduction percentage (minimum decay = default - max)
+   */
+  maxDecayReduction: number;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "mail".
  */
@@ -1569,6 +1614,23 @@ export interface ChallengeConfigSelect<T extends boolean = true> {
         difficultyAdjustment?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "game-config_select".
+ */
+export interface GameConfigSelect<T extends boolean = true> {
+  dailySecondsLimit?: T;
+  entryDuration?: T;
+  kingEntryDuration?: T;
+  poiRadius?: T;
+  maxCaptureSeconds?: T;
+  minuteBonusSeconds?: T;
+  defaultDecayPercentage?: T;
+  maxDecayReduction?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
