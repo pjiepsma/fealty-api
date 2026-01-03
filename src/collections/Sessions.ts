@@ -1,6 +1,8 @@
 import type { CollectionConfig } from 'payload'
 import type { Session } from '@/payload-types'
-import { CLAIM_CONSTANTS } from '../../../fealty/shared/constants/config'
+
+// Default daily seconds limit (fallback when game config is not available)
+const DEFAULT_DAILY_SECONDS_LIMIT = 60
 
 export const Sessions: CollectionConfig = {
   slug: 'sessions',
@@ -38,13 +40,13 @@ export const Sessions: CollectionConfig = {
         if (data.user && data.poi && data.startTime && data.secondsEarned) {
           try {
             const gameConfig = await req.payload.findGlobal({
-              slug: 'game-config',
+              slug: 'game-config' as any,
             })
 
             // Use configurable value with fallback to constant
             const dailySecondsLimit = gameConfig && typeof (gameConfig as any).dailySecondsLimit === 'number'
               ? (gameConfig as any).dailySecondsLimit
-              : CLAIM_CONSTANTS.MAX_CAPTURE_SECONDS // Fallback to 60 seconds
+              : DEFAULT_DAILY_SECONDS_LIMIT // Fallback to 60 seconds
             
             const userId = typeof data.user === 'string' ? data.user : data.user?.id
             const poiId = typeof data.poi === 'string' ? data.poi : data.poi?.id

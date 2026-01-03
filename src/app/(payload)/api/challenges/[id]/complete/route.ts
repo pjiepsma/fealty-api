@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
-import type { User, Reward } from '@/payload-types'
+import type { Reward } from '@/payload-types'
 import { RewardService } from '@/services/rewardService'
 
 export async function POST(

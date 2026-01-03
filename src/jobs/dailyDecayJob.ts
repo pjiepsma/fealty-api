@@ -8,7 +8,7 @@ export const dailyDecayTask: TaskConfig = {
     try {
       // Get game config for decay settings
       const gameConfig = await req.payload.findGlobal({
-        slug: 'game-config',
+        slug: 'game-config' as any,
       })
 
       const defaultDecayPercentage = gameConfig && typeof (gameConfig as any).defaultDecayPercentage === 'number'
