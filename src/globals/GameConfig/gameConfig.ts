@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { isAdmin } from '@/access/isAdmin'
 
 export const GameConfig: GlobalConfig = {
   slug: 'game-config',
@@ -10,6 +11,7 @@ export const GameConfig: GlobalConfig = {
     update: ({ req: { user } }) => {
       return user?.role === 'admin'
     },
+    admin: isAdmin,
   },
   fields: [
     {

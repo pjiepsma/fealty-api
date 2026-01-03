@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { generateMail } from '@/globals/Mail/utilities/sendMail'
+import { isAdmin } from '@/access/isAdmin'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -50,6 +51,33 @@ export const Users: CollectionConfig = {
         return subject
       },
     },
+    hooks: {
+      afterLogout: [
+        async ({ req, res }) => {
+          // Workaround for Payload CMS bug where logout doesn't always clear cookies
+          // This is a known issue, especially on Vercel/production environments
+          // Cookies must be cleared with the exact same attributes they were set with
+          if (res) {
+            const isProduction = process.env.NODE_ENV === 'production'
+            const cookieOptions = {
+              path: '/',
+              domain: process.env.COOKIE_DOMAIN || undefined,
+              sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax' | 'strict',
+              secure: isProduction,
+              httpOnly: true,
+            }
+            
+            // Clear cookie with production settings
+            res.clearCookie('payload-token', cookieOptions)
+            
+            // Also try clearing with alternative settings in case Payload set it differently
+            res.clearCookie('payload-token', { ...cookieOptions, path: '/admin' })
+            res.clearCookie('payload-token', { ...cookieOptions, sameSite: 'lax' })
+            res.clearCookie('payload-token', { ...cookieOptions, sameSite: 'strict' })
+          }
+        },
+      ],
+    },
   },
   access: {
     read: () => true, // Public read for profiles
@@ -70,6 +98,7 @@ export const Users: CollectionConfig = {
       // Only admins can delete users
       return user.role === 'admin'
     },
+    admin: isAdmin,
   },
   hooks: {
     afterChange: [

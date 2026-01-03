@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { isAdmin } from '@/access/isAdmin'
 
 export const ChallengeConfig: GlobalConfig = {
   slug: 'challenge-config',
@@ -11,6 +12,7 @@ export const ChallengeConfig: GlobalConfig = {
       // Only admins can update challenge config
       return user?.role === 'admin'
     },
+    admin: isAdmin,
   },
   fields: [
     {
