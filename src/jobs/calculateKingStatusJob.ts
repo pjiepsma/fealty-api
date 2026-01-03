@@ -1,4 +1,5 @@
 import type { TaskConfig } from 'payload'
+import type { Session, User } from '@/payload-types'
 
 export const calculateKingStatusTask: TaskConfig = {
   slug: 'calculate-king-status',
@@ -46,7 +47,7 @@ export const calculateKingStatusTask: TaskConfig = {
           // Group by user and sum seconds
           const userSecondsMap = new Map<string, number>()
           
-          sessions.docs.forEach((session: any) => {
+          sessions.docs.forEach((session: Session) => {
             const userId = typeof session.user === 'string' ? session.user : session.user?.id
             if (userId) {
               const current = userSecondsMap.get(userId) || 0
@@ -110,7 +111,7 @@ export const calculateKingStatusTask: TaskConfig = {
           const currentKingOf = kingPOIs.totalDocs
 
           // Update user if count changed
-          if ((user as any).currentKingOf !== currentKingOf) {
+          if ((user as User).currentKingOf !== currentKingOf) {
             await req.payload.update({
               collection: 'users',
               id: user.id,
@@ -144,4 +145,5 @@ export const calculateKingStatusTask: TaskConfig = {
     }
   },
 }
+
 

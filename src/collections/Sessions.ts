@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import type { Session } from '@/payload-types'
+import { CLAIM_CONSTANTS } from '../../../fealty/shared/constants/config'
 
 export const Sessions: CollectionConfig = {
   slug: 'sessions',
@@ -34,9 +35,17 @@ export const Sessions: CollectionConfig = {
           return data
         }
         
-        // Enforce daily limit: 60 seconds max per user per POI per day
         if (data.user && data.poi && data.startTime && data.secondsEarned) {
           try {
+            const gameConfig = await req.payload.findGlobal({
+              slug: 'game-config',
+            })
+
+            // Use configurable value with fallback to constant
+            const dailySecondsLimit = gameConfig && typeof (gameConfig as any).dailySecondsLimit === 'number'
+              ? (gameConfig as any).dailySecondsLimit
+              : CLAIM_CONSTANTS.MAX_CAPTURE_SECONDS // Fallback to 60 seconds
+            
             const userId = typeof data.user === 'string' ? data.user : data.user?.id
             const poiId = typeof data.poi === 'string' ? data.poi : data.poi?.id
 
@@ -48,7 +57,6 @@ export const Sessions: CollectionConfig = {
             const sessionDate = new Date(data.startTime)
             sessionDate.setHours(0, 0, 0, 0)
 
-            // Find all sessions for this user at this POI today
             const todaySessions = await req.payload.find({
               collection: 'sessions',
               where: {
@@ -85,20 +93,18 @@ export const Sessions: CollectionConfig = {
 
             const requestedSeconds = typeof data.secondsEarned === 'number' ? data.secondsEarned : 0
 
-            // Check if adding this session would exceed daily limit
-            if (dailyTotal + requestedSeconds > 60) {
-              const remainingSeconds = 60 - dailyTotal
+            if (dailyTotal + requestedSeconds > dailySecondsLimit) {
+              const remainingSeconds = dailySecondsLimit - dailyTotal
               
               if (remainingSeconds <= 0) {
                 throw new Error(
-                  `Daily limit reached for this POI. You have already earned ${dailyTotal} seconds today (max: 60 seconds).`
+                  `Daily limit reached for this POI. You have already earned ${dailyTotal} seconds today (max: ${dailySecondsLimit} seconds).`
                 )
               }
 
-              // Cap the seconds to the remaining allowed amount
               data.secondsEarned = Math.max(0, remainingSeconds)
               console.log(
-                `Capping session seconds: ${requestedSeconds}s → ${data.secondsEarned}s (${dailyTotal}s already earned today)`
+                `Capping session seconds: ${requestedSeconds}s → ${data.secondsEarned}s (${dailyTotal}s already earned today, limit: ${dailySecondsLimit}s)`
               )
             }
           } catch (error) {

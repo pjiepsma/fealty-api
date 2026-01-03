@@ -36,16 +36,27 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const data = await response.json()
+    interface NominatimResult {
+      type: string
+      name?: string
+      display_name: string
+      lat: string
+      lon: string
+      address?: {
+        country?: string
+      }
+    }
+
+    const data = await response.json() as NominatimResult[]
 
     const cities = data
-      .filter((item: any) => 
+      .filter((item: NominatimResult) => 
         item.type === 'city' || 
         item.type === 'town' || 
         item.type === 'village' ||
         item.type === 'municipality'
       )
-      .map((item: any) => ({
+      .map((item: NominatimResult) => ({
         name: item.name || item.display_name.split(',')[0],
         country: item.address?.country || '',
         lat: parseFloat(item.lat),
@@ -67,4 +78,5 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
 

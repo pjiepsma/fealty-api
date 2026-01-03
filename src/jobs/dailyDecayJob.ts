@@ -1,14 +1,26 @@
 import type { TaskConfig } from 'payload'
 import type { User } from '@/payload-types'
 
-const DEFAULT_DECAY_PERCENTAGE = 5.0
-const MINIMUM_DECAY_PERCENTAGE = 2.0
-
 export const dailyDecayTask: TaskConfig = {
   slug: 'daily-decay',
   handler: async (args) => {
     const { req } = args
     try {
+      // Get game config for decay settings
+      const gameConfig = await req.payload.findGlobal({
+        slug: 'game-config',
+      })
+
+      const defaultDecayPercentage = gameConfig && typeof (gameConfig as any).defaultDecayPercentage === 'number'
+        ? (gameConfig as any).defaultDecayPercentage
+        : 5.0 // Fallback
+
+      const maxDecayReduction = gameConfig && typeof (gameConfig as any).maxDecayReduction === 'number'
+        ? (gameConfig as any).maxDecayReduction
+        : 3.0 // Fallback
+
+      const minimumDecayPercentage = Math.max(0, defaultDecayPercentage - maxDecayReduction)
+
       // Get all users with totalSeconds > 0
       const users = await req.payload.find({
         collection: 'users',
@@ -44,10 +56,10 @@ export const dailyDecayTask: TaskConfig = {
             return sum + (reward.rewardValue || 0)
           }, 0)
 
-          // Calculate user's decay percentage (default - reduction, minimum 2%)
+          // Calculate user's decay percentage (default - reduction, minimum configurable)
           const userDecayPercentage = Math.max(
-            MINIMUM_DECAY_PERCENTAGE,
-            DEFAULT_DECAY_PERCENTAGE - totalDecayReduction
+            minimumDecayPercentage,
+            defaultDecayPercentage - totalDecayReduction
           )
 
           // Apply decay

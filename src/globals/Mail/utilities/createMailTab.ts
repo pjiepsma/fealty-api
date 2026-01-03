@@ -64,3 +64,4 @@ export const createMailTab = ({ label, name, placeholders, defaultSubject, defau
 
 
 
+

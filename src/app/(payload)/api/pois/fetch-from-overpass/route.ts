@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Pois } from '@/payload-types'
 
 // Overpass API endpoints (fallback list)
 const OVERPASS_ENDPOINTS = [
@@ -7,20 +8,36 @@ const OVERPASS_ENDPOINTS = [
   'https://overpass.openstreetmap.ru/api/interpreter',
 ]
 
-interface POI {
-  id: string
-  name: string
-  coordinates: [number, number]
-  latitude: number
-  longitude: number
-  type: string
-  category: string
+// Extended POI type for API response (based on Payload Pois type, with additional metadata)
+type POI = Omit<Pois, 'currentKing' | 'updatedAt' | 'createdAt'> & {
   description?: string
   website?: string
   wikipedia?: string
 }
 
-function detectPOIType(tags: any): string {
+interface OSMTags {
+  leisure?: string
+  tourism?: string
+  historic?: string
+  amenity?: string
+  name?: string
+  description?: string
+  'description:en'?: string
+  'description:nl'?: string
+  'description:de'?: string
+  note?: string
+  'note:en'?: string
+  'note:nl'?: string
+  comment?: string
+  website?: string
+  'contact:website'?: string
+  wikipedia?: string
+  'wikipedia:en'?: string
+  'wikipedia:nl'?: string
+  [key: string]: string | undefined
+}
+
+function detectPOIType(tags: OSMTags): string {
   if (tags.leisure === 'park' || tags.leisure === 'garden') return 'park'
   if (tags.tourism === 'museum') return 'museum'
   if (tags.tourism === 'artwork') return 'artwork'
@@ -37,7 +54,7 @@ function detectPOIType(tags: any): string {
 async function fetchWithRetry(
   endpoint: string,
   query: string,
-  maxRetries: number = 3
+  maxRetries: number = 3,
 ): Promise<POI[]> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -45,15 +62,12 @@ async function fetchWithRetry(
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
-      const response = await fetch(
-        `${endpoint}?data=${encodeURIComponent(query)}`,
-        {
-          headers: {
-            'User-Agent': 'FealtyApp/1.0',
-          },
-          signal: controller.signal,
-        }
-      )
+      const response = await fetch(`${endpoint}?data=${encodeURIComponent(query)}`, {
+        headers: {
+          'User-Agent': 'FealtyApp/1.0',
+        },
+        signal: controller.signal,
+      })
 
       clearTimeout(timeoutId)
 
@@ -61,8 +75,10 @@ async function fetchWithRetry(
       if (response.status === 504) {
         if (attempt < maxRetries) {
           const waitTime = attempt * 2000 // Exponential backoff: 2s, 4s, 6s
-          console.warn(`Overpass API 504 timeout, retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})...`)
-          await new Promise(resolve => setTimeout(resolve, waitTime))
+          console.warn(
+            `Overpass API 504 timeout, retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})...`,
+          )
+          await new Promise((resolve) => setTimeout(resolve, waitTime))
           continue
         } else {
           console.error('Overpass API 504 timeout after all retries')
@@ -82,25 +98,37 @@ async function fetchWithRetry(
         return []
       }
 
+      interface OverpassElement {
+        id: number
+        type: 'node' | 'way' | 'relation'
+        lat?: number
+        lon?: number
+        center?: {
+          lat: number
+          lon: number
+        }
+        tags: OSMTags
+      }
+
       const mappedPOIs = data.elements
-        .filter((poi: any) => poi.tags?.name) // Only POIs with names
-        .map((poi: any) => {
+        .filter((poi: OverpassElement) => poi.tags?.name) // Only POIs with names
+        .map((poi: OverpassElement) => {
           // For ways (polygons), use center coordinates
           const lat = poi.lat || poi.center?.lat
           const lon = poi.lon || poi.center?.lon
-          
+
           // Try multiple description tags
-          const description = 
-            poi.tags.description || 
-            poi.tags['description:en'] || 
-            poi.tags['description:nl'] || 
+          const description =
+            poi.tags.description ||
+            poi.tags['description:en'] ||
+            poi.tags['description:nl'] ||
             poi.tags['description:de'] ||
             poi.tags.note ||
             poi.tags['note:en'] ||
             poi.tags['note:nl'] ||
             poi.tags.comment ||
             undefined
-          
+
           return {
             id: `osm_${poi.id}`,
             name: poi.tags.name,
@@ -111,18 +139,24 @@ async function fetchWithRetry(
             category: poi.tags.tourism || poi.tags.amenity || poi.tags.leisure || 'other',
             description: description,
             website: poi.tags.website || poi.tags['contact:website'] || undefined,
-            wikipedia: poi.tags.wikipedia || poi.tags['wikipedia:en'] || poi.tags['wikipedia:nl'] || undefined,
+            wikipedia:
+              poi.tags.wikipedia ||
+              poi.tags['wikipedia:en'] ||
+              poi.tags['wikipedia:nl'] ||
+              undefined,
           } as POI
         })
-      
+
       return mappedPOIs
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle abort (timeout)
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         if (attempt < maxRetries) {
           const waitTime = attempt * 2000
-          console.warn(`Request timeout, retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})...`)
-          await new Promise(resolve => setTimeout(resolve, waitTime))
+          console.warn(
+            `Request timeout, retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})...`,
+          )
+          await new Promise((resolve) => setTimeout(resolve, waitTime))
           continue
         } else {
           console.error('Request timeout after all retries')
@@ -133,8 +167,12 @@ async function fetchWithRetry(
       // Other errors
       if (attempt < maxRetries) {
         const waitTime = attempt * 2000
-        console.warn(`Error fetching POIs, retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries}):`, error.message)
-        await new Promise(resolve => setTimeout(resolve, waitTime))
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.warn(
+          `Error fetching POIs, retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries}):`,
+          errorMessage,
+        )
+        await new Promise((resolve) => setTimeout(resolve, waitTime))
         continue
       } else {
         console.error('Error fetching POIs after all retries:', error)
@@ -146,9 +184,15 @@ async function fetchWithRetry(
   return []
 }
 
+interface FetchPOIsRequestBody {
+  lat: number
+  lng: number
+  radius?: number
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = (await request.json()) as FetchPOIsRequestBody
     const { lat, lng, radius = 10000 } = body
 
     if (!lat || !lng) {
@@ -156,7 +200,7 @@ export async function POST(request: NextRequest) {
         {
           error: 'Missing required parameters: lat and lng',
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -188,7 +232,7 @@ export async function POST(request: NextRequest) {
             count: result.length,
           })
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn(`Failed to fetch from ${endpoint}, trying next...`)
         continue
       }
@@ -207,7 +251,7 @@ export async function POST(request: NextRequest) {
         error: 'Failed to fetch POIs from Overpass',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

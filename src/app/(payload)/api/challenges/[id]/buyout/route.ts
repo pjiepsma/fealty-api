@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
 import type { Challenge, User, Reward } from '@/payload-types'
+import { RewardService } from '@/services/rewardService'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -127,47 +128,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           : (reward as Reward)
 
       if (rewardData) {
-        // Get current month for season-based rewards
-        const now = new Date()
-        const season = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-
-        // Get user's current active rewards
-        const userUpdate = (await payload.findByID({
-          collection: 'users',
-          id: userId,
-        })) as User
-
-        // Extract ActiveReward type from User's activeRewards field (which is an array)
-        type ActiveReward = NonNullable<User['activeRewards']> extends (infer U)[] ? U : never
-
-        const existingActiveRewards = (userUpdate.activeRewards || []) as ActiveReward[]
-
-        // Calculate expiry based on reward duration
-        let expiresAt: string | null = null
-        if (rewardData.rewardDuration) {
-          const expiryDate = new Date()
-          expiryDate.setHours(expiryDate.getHours() + rewardData.rewardDuration)
-          expiresAt = expiryDate.toISOString()
-        }
-
-        const activeReward: ActiveReward = {
-          reward: typeof reward === 'string' ? reward : reward.id,
-          challengeId: challengeId,
-          rewardType: rewardData.rewardType,
-          rewardValue: rewardData.rewardValue,
-          expiresAt: expiresAt || undefined,
-          season: rewardData.rewardType === 'bonus_crowns' ? season : undefined,
-          usesRemaining: rewardData.rewardUses || undefined,
-          isActive: true,
-        } as ActiveReward
-
-        await payload.update({
-          collection: 'users',
-          id: userId,
-          data: {
-            activeRewards: [...existingActiveRewards, activeReward],
-          },
-        })
+        await RewardService.activateReward(payload, userId, rewardData, challengeId)
       }
     }
 
