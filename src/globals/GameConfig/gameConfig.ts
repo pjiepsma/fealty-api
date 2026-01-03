@@ -11,7 +11,7 @@ export const GameConfig: GlobalConfig = {
     update: ({ req: { user } }) => {
       return user?.role === 'admin'
     },
-    admin: isAdmin,
+    admin: isAdminForAccess,
   },
   fields: [
     {
