@@ -1,19 +1,7 @@
 import type { GlobalConfig } from 'payload'
-import { isAdminForAccess } from '@/access/isAdmin'
 
 export const ChallengeConfig: GlobalConfig = {
   slug: 'challenge-config',
-  access: {
-    read: ({ req: { user } }) => {
-      // Only admins can read challenge config
-      return user?.role === 'admin'
-    },
-    update: ({ req: { user } }) => {
-      // Only admins can update challenge config
-      return user?.role === 'admin'
-    },
-    admin: isAdminForAccess,
-  },
   fields: [
     {
       type: 'tabs',

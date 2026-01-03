@@ -1,29 +1,9 @@
 import type { CollectionConfig } from 'payload'
-import { isAdminForAccess } from '@/access/isAdmin'
 
 export const Rewards: CollectionConfig = {
   slug: 'rewards',
   admin: {
     useAsTitle: 'description',
-  },
-  access: {
-    read: () => true, // Public read for active rewards
-    create: ({ req: { user } }) => {
-      if (!user) return false
-      // Only admins can create rewards
-      return user.role === 'admin'
-    },
-    update: ({ req: { user } }) => {
-      if (!user) return false
-      // Only admins can update rewards
-      return user.role === 'admin'
-    },
-    delete: ({ req: { user } }) => {
-      if (!user) return false
-      // Only admins can delete rewards
-      return user.role === 'admin'
-    },
-    admin: isAdminForAccess,
   },
   fields: [
     {

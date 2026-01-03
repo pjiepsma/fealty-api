@@ -1,6 +1,5 @@
 import type { CollectionConfig } from 'payload'
 import type { Session } from '@/payload-types'
-import { isAdminForAccess } from '@/access/isAdmin'
 
 // Default daily seconds limit (fallback when game config is not available)
 const DEFAULT_DAILY_SECONDS_LIMIT = 60
@@ -9,27 +8,6 @@ export const Sessions: CollectionConfig = {
   slug: 'sessions',
   admin: {
     useAsTitle: 'id',
-  },
-  access: {
-    read: () => true, // Public read for leaderboards
-    create: ({ req: { user } }) => {
-      if (!user) return false
-      // Users can only create their own sessions
-      return true
-    },
-    update: ({ req: { user } }) => {
-      if (!user) return false
-      // Admins can update any session
-      if (user.role === 'admin') return true
-      // Users cannot update sessions (they are immutable)
-      return false
-    },
-    delete: ({ req: { user } }) => {
-      if (!user) return false
-      // Only admins can delete sessions
-      return user.role === 'admin'
-    },
-    admin: isAdminForAccess,
   },
   hooks: {
     beforeValidate: [

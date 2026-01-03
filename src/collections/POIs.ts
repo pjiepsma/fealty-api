@@ -1,27 +1,9 @@
 import type { CollectionConfig } from 'payload'
-import { isAdminForAccess } from '@/access/isAdmin'
 
 export const POIs: CollectionConfig = {
   slug: 'pois',
   admin: {
     useAsTitle: 'name',
-  },
-  access: {
-    read: () => true, // Public read
-    create: ({ req: { user } }) => !!user, // Authenticated users can create
-    update: ({ req: { user } }) => {
-      if (!user) return false
-      // Admins can update any POI
-      if (user.role === 'admin') return true
-      // Regular users cannot update POIs (they are read-only)
-      return false
-    },
-    delete: ({ req: { user } }) => {
-      if (!user) return false
-      // Only admins can delete POIs
-      return user.role === 'admin'
-    },
-    admin: isAdminForAccess,
   },
   fields: [
     {

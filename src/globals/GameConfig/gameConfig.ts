@@ -1,17 +1,9 @@
 import type { GlobalConfig } from 'payload'
-import { isAdminForAccess } from '@/access/isAdmin'
 
 export const GameConfig: GlobalConfig = {
   slug: 'game-config',
   admin: {
     description: 'Core game mechanics and balance configuration',
-  },
-  access: {
-    read: () => true,
-    update: ({ req: { user } }) => {
-      return user?.role === 'admin'
-    },
-    admin: isAdminForAccess,
   },
   fields: [
     {
