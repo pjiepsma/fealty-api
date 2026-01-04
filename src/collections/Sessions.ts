@@ -1,5 +1,6 @@
-import type { CollectionConfig } from 'payload'
-import type { Session } from '@/payload-types'
+import type { CollectionConfig, PayloadRequest } from 'payload'
+import type { Session, Challenge, Pois, Reward } from '@/payload-types'
+import { RewardService } from '@/services/rewardService'
 
 // Default daily seconds limit (fallback when game config is not available)
 const DEFAULT_DAILY_SECONDS_LIMIT = 60
@@ -148,6 +149,9 @@ export const Sessions: CollectionConfig = {
               },
             })
 
+            // Update challenge progress
+            await updateChallengeProgress(req, userId, doc)
+
             // TODO: Calculate streaks (requires checking previous sessions)
             // TODO: Calculate currentKingOf (requires checking all POIs)
           } catch (error) {
@@ -238,6 +242,258 @@ export const Sessions: CollectionConfig = {
       fields: ['user', 'poi', 'month'],
     },
   ],
+}
+
+/**
+ * Update challenge progress based on the newly created session
+ */
+async function updateChallengeProgress(req: PayloadRequest, userId: string, session: Session) {
+  try {
+    const poiId = typeof session.poi === 'string' ? session.poi : session.poi?.id
+    const secondsEarned = session.secondsEarned || 0
+    const now = new Date()
+
+    // Get all non-completed challenges for this user
+    // Check all challenges regardless of expiration - if user completes the requirement, mark it as completed
+    const activeChallenges = await req.payload.find({
+      collection: 'challenges',
+      where: {
+        and: [
+          {
+            user: {
+              equals: userId,
+            },
+          },
+          {
+            completedAt: {
+              equals: null,
+            },
+          },
+        ],
+      },
+      limit: 100,
+    })
+
+    if (activeChallenges.docs.length === 0) {
+      return
+    }
+
+    // Get POI details if needed
+    let poi: Pois | null = null
+    if (poiId) {
+      try {
+        poi = await req.payload.findByID({
+          collection: 'pois',
+          id: poiId,
+        }) as Pois
+      } catch (error) {
+        console.error(`Error fetching POI ${poiId}:`, error)
+      }
+    }
+
+    // Process each challenge
+    for (const challenge of activeChallenges.docs as Challenge[]) {
+      try {
+        let newProgress = challenge.progress || 0
+        let shouldUpdate = false
+
+        switch (challenge.challengeType) {
+          case 'longest_session':
+            // Update progress to the maximum of current progress and this session's duration
+            if (secondsEarned > newProgress) {
+              newProgress = secondsEarned
+              shouldUpdate = true
+            }
+            break
+
+          case 'session_duration':
+            // Add this session's duration to progress
+            newProgress += secondsEarned
+            shouldUpdate = true
+            break
+
+          case 'entry_count':
+            // Increment progress by 1
+            newProgress += 1
+            shouldUpdate = true
+            break
+
+          case 'unique_pois':
+            // Count unique POIs (reuse logic from user stats)
+            if (poiId) {
+              const userSessions = await req.payload.find({
+                collection: 'sessions',
+                where: {
+                  user: {
+                    equals: userId,
+                  },
+                },
+                limit: 1000,
+              })
+
+              const uniquePOIs = new Set(
+                userSessions.docs.map((s: Session) => {
+                  const id = typeof s.poi === 'string' ? s.poi : s.poi?.id
+                  return id
+                }),
+              )
+
+              newProgress = uniquePOIs.size
+              shouldUpdate = true
+            }
+            break
+
+          case 'crown_claim':
+            // Check if user is king of this POI
+            if (poi && poi.currentKing) {
+              const kingId = typeof poi.currentKing === 'string' ? poi.currentKing : poi.currentKing?.id
+              if (kingId === userId) {
+                newProgress += 1
+                shouldUpdate = true
+              }
+            }
+            break
+
+          case 'category_variety':
+            // Count unique categories visited
+            if (poi) {
+              const userSessions = await req.payload.find({
+                collection: 'sessions',
+                where: {
+                  user: {
+                    equals: userId,
+                  },
+                },
+                limit: 1000,
+                depth: 1,
+              })
+
+              const uniqueCategories = new Set<string>()
+              for (const s of userSessions.docs as Session[]) {
+                const poiData = typeof s.poi === 'string' ? null : s.poi
+                if (poiData && poiData.category) {
+                  uniqueCategories.add(poiData.category)
+                }
+              }
+
+              newProgress = uniqueCategories.size
+              shouldUpdate = true
+            }
+            break
+
+          case 'category_similarity':
+            // Count sessions in the same category as targetCategory
+            if (challenge.targetCategory && poi && poi.category === challenge.targetCategory) {
+              const userSessions = await req.payload.find({
+                collection: 'sessions',
+                where: {
+                  and: [
+                    {
+                      user: {
+                        equals: userId,
+                      },
+                    },
+                    {
+                      poi: {
+                        equals: poiId,
+                      },
+                    },
+                  ],
+                },
+                limit: 1000,
+              })
+
+              newProgress = userSessions.totalDocs
+              shouldUpdate = true
+            }
+            break
+
+          case 'new_location':
+            // Check if this is a new POI for the user
+            if (poiId) {
+              const previousSessions = await req.payload.find({
+                collection: 'sessions',
+                where: {
+                  and: [
+                    {
+                      user: {
+                        equals: userId,
+                      },
+                    },
+                    {
+                      poi: {
+                        equals: poiId,
+                      },
+                    },
+                    {
+                      id: {
+                        not_equals: session.id,
+                      },
+                    },
+                  ],
+                },
+                limit: 1,
+              })
+
+              // If no previous sessions at this POI, this is a new location
+              if (previousSessions.totalDocs === 0) {
+                newProgress += 1
+                shouldUpdate = true
+              }
+            }
+            break
+        }
+
+        // Update challenge progress if it changed
+        if (shouldUpdate) {
+          const updateData: {
+            progress: number
+            completedAt?: string
+          } = {
+            progress: newProgress,
+          }
+
+          // Check if challenge is completed
+          const targetValue = challenge.targetValue || 0
+          if (newProgress >= targetValue && !challenge.completedAt) {
+            updateData.completedAt = now.toISOString()
+
+            // Activate reward
+            const reward = challenge.reward
+            if (reward) {
+              const rewardData: Reward = typeof reward === 'string'
+                ? (await req.payload.findByID({
+                    collection: 'rewards',
+                    id: reward,
+                  }) as Reward)
+                : (reward as Reward)
+
+              if (rewardData) {
+                await RewardService.activateReward(
+                  req.payload,
+                  userId,
+                  rewardData,
+                  challenge.id,
+                )
+              }
+            }
+          }
+
+          await req.payload.update({
+            collection: 'challenges',
+            id: challenge.id,
+            data: updateData,
+          })
+        }
+      } catch (error) {
+        console.error(`Error updating challenge ${challenge.id}:`, error)
+        // Continue with other challenges
+      }
+    }
+  } catch (error) {
+    console.error('Error updating challenge progress:', error)
+    // Don't throw error to prevent session creation from failing
+  }
 }
 
 
