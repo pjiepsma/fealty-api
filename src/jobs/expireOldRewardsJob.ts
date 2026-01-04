@@ -35,9 +35,14 @@ export const expireOldRewardsTask: TaskConfig = {
             }
 
             // Remove expired time-based rewards
-            if (reward.expiresAt && new Date(reward.expiresAt) < now) {
-              expiredRewardsCount++
-              return false
+            if (reward.activatedAt && reward.duration) {
+              const activatedTime = new Date(reward.activatedAt).getTime()
+              const durationMs = reward.duration * 60 * 60 * 1000
+              const expiresAt = activatedTime + durationMs
+              if (expiresAt < now.getTime()) {
+                expiredRewardsCount++
+                return false
+              }
             }
 
             // Remove use-based rewards with no uses remaining

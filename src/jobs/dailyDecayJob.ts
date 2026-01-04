@@ -45,10 +45,22 @@ export const dailyDecayTask: TaskConfig = {
 
           // Get user's active decay_reduction rewards
           const activeRewards = (user.activeRewards || []).filter(
-            (reward: NonNullable<User['activeRewards']>[number]) =>
-              reward.isActive &&
-              reward.rewardType === 'decay_reduction' &&
-              (!reward.expiresAt || new Date(reward.expiresAt) > new Date())
+            (reward: NonNullable<User['activeRewards']>[number]) => {
+              if (!reward.isActive || reward.rewardType !== 'decay_reduction') {
+                return false
+              }
+
+              // Check if reward has expired based on activatedAt + duration
+              if (reward.activatedAt && reward.duration) {
+                const activatedTime = new Date(reward.activatedAt).getTime()
+                const durationMs = reward.duration * 60 * 60 * 1000
+                const expiresAt = activatedTime + durationMs
+                return expiresAt > new Date().getTime()
+              }
+
+              // If no duration/activation time, consider it active (unlimited)
+              return true
+            }
           )
 
           // Calculate total decay reduction from active rewards

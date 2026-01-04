@@ -29,14 +29,38 @@ export class RewardService {
     // Extract ActiveReward type from User's activeRewards field (which is an array)
     type ActiveReward = NonNullable<User['activeRewards']> extends (infer U)[] ? U : never
 
-    const activeRewards = (user.activeRewards || []) as ActiveReward[]
+    let activeRewards = (user.activeRewards || []) as ActiveReward[]
 
-    // Calculate expiry and uses
-    let expiresAt: string | null = null
+    // Clean up expired active rewards - mark them as inactive if they have uses left, remove if no uses
+    activeRewards = activeRewards.map((reward: ActiveReward) => {
+      if (reward.isActive && reward.activatedAt && reward.duration) {
+        const activatedTime = new Date(reward.activatedAt).getTime()
+        const durationMs = reward.duration * 60 * 60 * 1000
+        const expiresAt = activatedTime + durationMs
+
+        if (expiresAt <= now.getTime()) {
+          // Reward has expired
+          const hasUsesLeft = reward.usesRemaining === null ||
+                             reward.usesRemaining === undefined ||
+                             reward.usesRemaining > 0
+
+          if (hasUsesLeft) {
+            // Mark as inactive but keep for reactivation
+            return { ...reward, isActive: false }
+          } else {
+            // Remove completely - return null and filter out later
+            return null
+          }
+        }
+      }
+      return reward
+    }).filter((reward): reward is ActiveReward => reward !== null)
+
+    // Store activation time and duration
+    const activatedAt = new Date().toISOString()
+    let duration: number | null = null
     if (reward.rewardDuration) {
-      const expiryDate = new Date()
-      expiryDate.setHours(expiryDate.getHours() + reward.rewardDuration)
-      expiresAt = expiryDate.toISOString()
+      duration = reward.rewardDuration
     }
 
     // Set uses remaining for use-based rewards
@@ -45,10 +69,9 @@ export class RewardService {
       usesRemaining = reward.rewardUses
     }
 
-    // Season-based rewards (like bonus_crowns) don't expire until season ends
-    // Expiration is handled by API cron jobs (expire_season_rewards)
+    // Season-based rewards (like bonus_crowns) are unlimited
     if (reward.rewardType === 'bonus_crowns') {
-      expiresAt = null
+      duration = null
       usesRemaining = null
     }
 
@@ -57,7 +80,8 @@ export class RewardService {
       challengeId: challengeId || null,
       rewardType: reward.rewardType,
       rewardValue: reward.rewardValue,
-      expiresAt: expiresAt || undefined,
+      activatedAt,
+      duration,
       season: reward.rewardType === 'bonus_crowns' ? season : undefined,
       usesRemaining: usesRemaining || undefined,
       isActive: true,

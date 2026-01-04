@@ -278,9 +278,13 @@ export interface User {
          */
         rewardValue: number;
         /**
-         * For time-based rewards, when it expires (null for season-based)
+         * When the reward was activated
          */
-        expiresAt?: string | null;
+        activatedAt?: string | null;
+        /**
+         * Duration in hours (null for unlimited/season-based)
+         */
+        duration?: number | null;
         /**
          * YYYY-MM format, for season-based rewards like bonus_crowns
          */
@@ -790,7 +794,8 @@ export interface UsersSelect<T extends boolean = true> {
         reward?: T;
         rewardType?: T;
         rewardValue?: T;
-        expiresAt?: T;
+        activatedAt?: T;
+        duration?: T;
         season?: T;
         usesRemaining?: T;
         isActive?: T;

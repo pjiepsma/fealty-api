@@ -339,10 +339,17 @@ export const Users: CollectionConfig = {
           },
         },
         {
-          name: 'expiresAt',
+          name: 'activatedAt',
           type: 'date',
           admin: {
-            description: 'For time-based rewards, when it expires (null for season-based)',
+            description: 'When the reward was activated',
+          },
+        },
+        {
+          name: 'duration',
+          type: 'number',
+          admin: {
+            description: 'Duration in hours (null for unlimited/season-based)',
           },
         },
         {
