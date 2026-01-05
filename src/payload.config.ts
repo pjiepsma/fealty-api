@@ -151,7 +151,7 @@ export default buildConfig({
         ...pulseTask,
         schedule: [
           {
-            cron: '* * * * *', // Every minute
+            cron: '0 0 * * *', // Daily (Vercel Hobby plan limit)
             queue: 'default',
           },
         ],
