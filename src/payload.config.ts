@@ -15,6 +15,7 @@ import { getSelectedEmailAdapter } from './lib/email-adapters/selectEmailAdapter
 import { ChallengeConfig } from './globals/ChallengeConfig/challengeConfig'
 import { GameConfig } from './globals/GameConfig/gameConfig'
 import { Mail } from './globals/Mail/mail'
+import { generateBlurHandler } from '@/payload/jobs/generate-blur'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -78,18 +79,14 @@ export default buildConfig({
     }),
     tasks: [
       {
-        slug: 'pulse',
-        handler: async () => {
-          const timestamp = new Date().toISOString()
-          console.log(`🫀 Pulse job executed successfully at ${timestamp}`)
-          return {
-            output: {
-              success: true,
-              timestamp,
-              message: 'Pulse job completed successfully',
-            },
-          }
-        },
+        slug: 'generate-blur',
+        inputSchema: [
+          { name: 'docId', type: 'text', required: true },
+          { name: 'collection', type: 'text', required: true },
+        ],
+        outputSchema: [{ name: 'message', type: 'text', required: true }],
+        handler: generateBlurHandler,
+        retries: 1,
       },
     ],
   },
