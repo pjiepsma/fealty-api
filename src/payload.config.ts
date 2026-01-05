@@ -62,24 +62,31 @@ export default buildConfig({
   jobs: {
     access: {
       run: ({ req }) => {
-        // Allow logged-in users to execute jobs
+        // Allow logged-in users to execute this endpoint
         if (req.user) return true
 
-        // Verify Vercel Cron authentication
-        // Source: https://vercel.com/guides/troubleshooting-vercel-cron-jobs
-        // "This secret is automatically included in the Authorization header when Vercel invokes your cron job"
+        // Check for Vercel Cron secret
+        // Source: https://buildwithmatija.com/payload/payload-jobs-vercel
         const authHeader = req.headers.get('authorization')
-        
         if (!process.env.CRON_SECRET) {
           console.warn('CRON_SECRET environment variable is not set')
           return false
         }
-        
-        // Vercel sends: Authorization: Bearer <CRON_SECRET>
-        // Source: https://vercel.com/guides/troubleshooting-vercel-cron-jobs
         return authHeader === `Bearer ${process.env.CRON_SECRET}`
       },
+      queue: () => true,
+      cancel: () => true,
     },
+    jobsCollectionOverrides: ({ defaultJobsCollection }) => ({
+      ...defaultJobsCollection,
+      access: {
+        ...defaultJobsCollection.access,
+        read: ({ req }) => !!req.user,
+        create: ({ req }) => !!req.user,
+        update: ({ req }) => !!req.user,
+        delete: ({ req }) => !!req.user,
+      },
+    }),
     tasks: [
       {
         ...assignDailyChallengesTask,
