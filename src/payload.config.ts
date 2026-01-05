@@ -65,23 +65,19 @@ export default buildConfig({
         // Allow logged-in users to execute jobs
         if (req.user) return true
 
-        // Check for Vercel Cron secret
+        // Verify Vercel Cron authentication
+        // Source: https://vercel.com/guides/troubleshooting-vercel-cron-jobs
+        // "This secret is automatically included in the Authorization header when Vercel invokes your cron job"
         const authHeader = req.headers.get('authorization')
-        console.log('🔍 Auth check:', {
-          hasAuthHeader: !!authHeader,
-          authHeader: authHeader ? `${authHeader.substring(0, 20)}...` : 'none',
-          hasCronSecret: !!process.env.CRON_SECRET,
-          cronSecret: process.env.CRON_SECRET ? `${process.env.CRON_SECRET.substring(0, 20)}...` : 'none',
-        })
         
         if (!process.env.CRON_SECRET) {
           console.warn('CRON_SECRET environment variable is not set')
           return false
         }
         
-        const isAuthorized = authHeader === `Bearer ${process.env.CRON_SECRET}`
-        console.log('🔐 Authorization result:', isAuthorized)
-        return isAuthorized
+        // Vercel sends: Authorization: Bearer <CRON_SECRET>
+        // Source: https://vercel.com/guides/troubleshooting-vercel-cron-jobs
+        return authHeader === `Bearer ${process.env.CRON_SECRET}`
       },
     },
     tasks: [
