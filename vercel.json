@@ -1,8 +1,13 @@
 {
+  "buildCommand": "pnpm run build",
+  "outputDirectory": ".next",
+  "env": {
+    "VERCEL_SKIP_BUILD": "1"
+  },
   "crons": [
     {
       "path": "/api/payload-jobs/run",
-      "schedule": "40 0 * * *"
+      "schedule": "45 0 * * *"
     }
   ],
   "functions": {
