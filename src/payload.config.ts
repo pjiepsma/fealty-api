@@ -52,17 +52,28 @@ export default buildConfig({
   jobs: {
     access: {
       run: ({ req }) => {
+        console.log('🔍 /api/payload-jobs/run accessed')
+        
         // Allow logged-in users to execute this endpoint
-        if (req.user) return true
+        if (req.user) {
+          console.log('✅ Authenticated via user session')
+          return true
+        }
 
         // Check for Vercel Cron secret
         // Source: https://buildwithmatija.com/payload/payload-jobs-vercel
         const authHeader = req.headers.get('authorization')
+        console.log('🔍 Auth header:', authHeader ? `${authHeader.substring(0, 30)}...` : 'NONE')
+        console.log('🔍 CRON_SECRET exists:', !!process.env.CRON_SECRET)
+        
         if (!process.env.CRON_SECRET) {
-          console.warn('CRON_SECRET environment variable is not set')
+          console.warn('❌ CRON_SECRET not set')
           return false
         }
-        return authHeader === `Bearer ${process.env.CRON_SECRET}`
+        
+        const isAuthorized = authHeader === `Bearer ${process.env.CRON_SECRET}`
+        console.log('🔐 Auth result:', isAuthorized ? 'PASS' : 'FAIL')
+        return isAuthorized
       },
       queue: () => true,
       cancel: () => true,
