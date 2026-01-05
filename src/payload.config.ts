@@ -137,7 +137,7 @@ export default buildConfig({
         ...pulseTask,
         schedule: [
           {
-            cron: '*/10 * * * *', // Every 10 minutes
+            cron: '0 * * * *', // Every hour
             queue: 'default',
           },
         ],
