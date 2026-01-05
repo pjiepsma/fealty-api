@@ -56,7 +56,9 @@ export async function GET(_request: Request) {
         if (typeof handler !== 'function') {
           throw new Error(`Invalid handler for job: ${job.name}`)
         }
-        const result = await (handler as (args: { req: PayloadRequest; input: unknown }) => Promise<unknown>)({
+        const result = await (
+          handler as (args: { req: PayloadRequest; input: unknown }) => Promise<unknown>
+        )({
           req: mockReq,
           input: {},
         })
