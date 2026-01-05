@@ -25,6 +25,7 @@ import { dailyDecayTask } from './jobs/dailyDecayJob'
 import { expireOldRewardsTask } from './jobs/expireOldRewardsJob'
 import { expireSeasonRewardsTask } from './jobs/expireSeasonRewardsJob'
 import { calculateKingStatusTask } from './jobs/calculateKingStatusJob'
+import { pulseTask } from './jobs/pulseJob'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -128,6 +129,15 @@ export default buildConfig({
         schedule: [
           {
             cron: '30 0 * * *', // Every day at 00:30 UTC (after daily decay at 00:00)
+            queue: 'default',
+          },
+        ],
+      },
+      {
+        ...pulseTask,
+        schedule: [
+          {
+            cron: '0 * * * *', // Every hour at minute 0
             queue: 'default',
           },
         ],

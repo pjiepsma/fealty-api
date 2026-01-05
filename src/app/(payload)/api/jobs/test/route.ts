@@ -4,9 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { assignDailyChallengesTask, assignWeeklyChallengesTask, assignMonthlyChallengesTask } from '@/jobs/assignChallengesJob'
 import { expireChallengesTask } from '@/jobs/expireChallengesJob'
 import { dailyDecayTask } from '@/jobs/dailyDecayJob'
+import { pulseTask } from '@/jobs/pulseJob'
 import type { PayloadRequest } from 'payload'
 
 type JobSlug =
+  | 'pulse'
   | 'assign-daily-challenges'
   | 'assign-weekly-challenges'
   | 'assign-monthly-challenges'
@@ -14,6 +16,7 @@ type JobSlug =
   | 'daily-decay'
 
 const jobHandlers: Record<JobSlug, typeof assignDailyChallengesTask> = {
+  'pulse': pulseTask,
   'assign-daily-challenges': assignDailyChallengesTask,
   'assign-weekly-challenges': assignWeeklyChallengesTask,
   'assign-monthly-challenges': assignMonthlyChallengesTask,
@@ -37,6 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     const validJobSlugs: JobSlug[] = [
+      'pulse',
       'assign-daily-challenges',
       'assign-weekly-challenges',
       'assign-monthly-challenges',
@@ -111,6 +115,10 @@ export async function POST(request: NextRequest) {
 export async function GET(_request: NextRequest) {
   return NextResponse.json({
     availableJobs: [
+      {
+        slug: 'pulse',
+        description: 'Simple pulse job that logs success (runs hourly)',
+      },
       {
         slug: 'assign-daily-challenges',
         description: 'Assign daily challenges to all users',

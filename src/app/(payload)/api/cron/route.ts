@@ -1,12 +1,17 @@
 import { headers } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { assignDailyChallengesTask, assignWeeklyChallengesTask, assignMonthlyChallengesTask } from '@/jobs/assignChallengesJob'
+import {
+  assignDailyChallengesTask,
+  assignWeeklyChallengesTask,
+  assignMonthlyChallengesTask,
+} from '@/jobs/assignChallengesJob'
 import { expireChallengesTask } from '@/jobs/expireChallengesJob'
 import { dailyDecayTask } from '@/jobs/dailyDecayJob'
 import { expireOldRewardsTask } from '@/jobs/expireOldRewardsJob'
 import { expireSeasonRewardsTask } from '@/jobs/expireSeasonRewardsJob'
 import { calculateKingStatusTask } from '@/jobs/calculateKingStatusJob'
+import { pulseTask } from '@/jobs/pulseJob'
 import type { PayloadRequest } from 'payload'
 
 export async function GET(_request: Request) {
@@ -33,6 +38,7 @@ export async function GET(_request: Request) {
 
     // Run all scheduled jobs manually
     const jobsToRun = [
+      { name: 'pulse', task: pulseTask },
       { name: 'assign-daily-challenges', task: assignDailyChallengesTask },
       { name: 'assign-weekly-challenges', task: assignWeeklyChallengesTask },
       { name: 'assign-monthly-challenges', task: assignMonthlyChallengesTask },
@@ -46,7 +52,14 @@ export async function GET(_request: Request) {
     for (const job of jobsToRun) {
       try {
         console.log(`Running job: ${job.name}`)
-        const result = await job.task.handler({ req: mockReq, input: {} })
+        const handler = job.task.handler
+        if (typeof handler !== 'function') {
+          throw new Error(`Invalid handler for job: ${job.name}`)
+        }
+        const result = await (handler as (args: { req: PayloadRequest; input: unknown }) => Promise<unknown>)({
+          req: mockReq,
+          input: {},
+        })
         results[job.name] = result
         console.log(`Job ${job.name} completed:`, result)
       } catch (error) {
@@ -62,17 +75,16 @@ export async function GET(_request: Request) {
       message: 'All cron jobs executed',
       timestamp: new Date().toISOString(),
       results,
-      errors: errors.length > 0 ? errors : undefined
+      errors: errors.length > 0 ? errors : undefined,
     })
   } catch (error) {
     console.error('Cron job error:', error)
     return Response.json(
       {
         error: 'Cron job failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
-
