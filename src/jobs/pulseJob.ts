@@ -1,7 +1,7 @@
 import type { TaskConfig } from 'payload'
 
 /**
- * Simple pulse job that logs success - runs hourly to verify cron is working
+ * Simple pulse job that logs success - runs every minute to verify cron is working
  */
 export const pulseTask: TaskConfig = {
   slug: 'pulse' as any,

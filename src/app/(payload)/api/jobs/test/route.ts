@@ -117,7 +117,7 @@ export async function GET(_request: NextRequest) {
     availableJobs: [
       {
         slug: 'pulse',
-        description: 'Simple pulse job that logs success (runs hourly)',
+        description: 'Simple pulse job that logs success (runs every minute)',
       },
       {
         slug: 'assign-daily-challenges',

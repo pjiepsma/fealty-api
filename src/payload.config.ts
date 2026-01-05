@@ -60,6 +60,20 @@ export default buildConfig({
   sharp,
   email: getSelectedEmailAdapter(),
   jobs: {
+    access: {
+      run: ({ req }) => {
+        // Allow logged-in users to execute jobs
+        if (req.user) return true
+
+        // Check for Vercel Cron secret
+        const authHeader = req.headers.get('authorization')
+        if (!process.env.CRON_SECRET) {
+          console.warn('CRON_SECRET environment variable is not set')
+          return false
+        }
+        return authHeader === `Bearer ${process.env.CRON_SECRET}`
+      },
+    },
     tasks: [
       {
         ...assignDailyChallengesTask,
@@ -137,7 +151,7 @@ export default buildConfig({
         ...pulseTask,
         schedule: [
           {
-            cron: '0 * * * *', // Every hour
+            cron: '* * * * *', // Every minute
             queue: 'default',
           },
         ],
