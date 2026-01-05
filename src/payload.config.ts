@@ -15,17 +15,6 @@ import { getSelectedEmailAdapter } from './lib/email-adapters/selectEmailAdapter
 import { ChallengeConfig } from './globals/ChallengeConfig/challengeConfig'
 import { GameConfig } from './globals/GameConfig/gameConfig'
 import { Mail } from './globals/Mail/mail'
-import {
-  assignDailyChallengesTask,
-  assignWeeklyChallengesTask,
-  assignMonthlyChallengesTask,
-} from './jobs/assignChallengesJob'
-import { expireChallengesTask } from './jobs/expireChallengesJob'
-import { dailyDecayTask } from './jobs/dailyDecayJob'
-import { expireOldRewardsTask } from './jobs/expireOldRewardsJob'
-import { expireSeasonRewardsTask } from './jobs/expireSeasonRewardsJob'
-import { calculateKingStatusTask } from './jobs/calculateKingStatusJob'
-import { pulseTask } from './jobs/pulseJob'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -89,85 +78,18 @@ export default buildConfig({
     }),
     tasks: [
       {
-        ...assignDailyChallengesTask,
-        schedule: [
-          {
-            cron: '0 0 * * *', // Every day at 00:00 UTC
-            queue: 'default',
-          },
-        ],
-      },
-      {
-        ...assignWeeklyChallengesTask,
-        schedule: [
-          {
-            cron: '0 0 * * 1', // Every Monday at 00:00 UTC
-            queue: 'default',
-          },
-        ],
-      },
-      {
-        ...assignMonthlyChallengesTask,
-        schedule: [
-          {
-            cron: '0 0 1 * *', // 1st of every month at 00:00 UTC
-            queue: 'default',
-          },
-        ],
-      },
-      {
-        ...expireChallengesTask,
-        schedule: [
-          {
-            cron: '0 1 * * *', // Every day at 01:00 UTC (after challenge assignment)
-            queue: 'default',
-          },
-        ],
-      },
-      {
-        ...dailyDecayTask,
-        schedule: [
-          {
-            cron: '0 0 * * *', // Every day at 00:00 UTC
-            queue: 'default',
-          },
-        ],
-      },
-      {
-        ...expireOldRewardsTask,
-        schedule: [
-          {
-            cron: '0 2 * * *', // Every day at 02:00 UTC (after daily_decay at 00:00)
-            queue: 'default',
-          },
-        ],
-      },
-      {
-        ...expireSeasonRewardsTask,
-        schedule: [
-          {
-            cron: '30 1 1 * *', // 1st of every month at 01:30 UTC (after challenge cleanup at 01:00)
-            queue: 'default',
-          },
-        ],
-      },
-      {
-        ...calculateKingStatusTask,
-        schedule: [
-          {
-            cron: '30 0 * * *', // Every day at 00:30 UTC (after daily decay at 00:00)
-            queue: 'default',
-          },
-        ],
-      },
-      {
-        ...pulseTask,
-        schedule: [
-          {
-            cron: '0 0 * * *', // Daily (Vercel Hobby plan limit)
-            queue: 'default',
-          },
-        ],
+        slug: 'pulse',
+        handler: async () => {
+          const timestamp = new Date().toISOString()
+          console.log(`🫀 Pulse job executed successfully at ${timestamp}`)
+          return {
+            output: {
+              success: true,
+              timestamp,
+              message: 'Pulse job completed successfully',
+            },
+          }
+        },
       },
     ],
   },
