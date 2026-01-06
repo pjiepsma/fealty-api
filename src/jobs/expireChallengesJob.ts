@@ -1,61 +1,60 @@
-import type { TaskConfig } from 'payload'
+import { getPayload } from 'payload'
+import config from '@payload-config'
 
-export const expireChallengesTask: TaskConfig = {
-  slug: 'expire-challenges',
-  handler: async (args) => {
-    const { req } = args
-    try {
-      const now = new Date().toISOString()
+export const runExpireChallenges = async () => {
+  const timestamp = new Date().toISOString()
+  console.log(`[TASK] 🗑️ Expired challenges cleanup started at ${timestamp}`)
 
-      // Find all expired incomplete challenges
-      const expiredChallenges = await req.payload.find({
-        collection: 'challenges',
-        where: {
-          and: [
-            {
-              expiresAt: {
-                less_than: now,
-              },
+  try {
+    const payload = await getPayload({ config })
+    const now = new Date().toISOString()
+
+    // Find all expired incomplete challenges
+    const expiredChallenges = await payload.find({
+      collection: 'challenges',
+      where: {
+        and: [
+          {
+            expiresAt: {
+              less_than: now,
             },
-            {
-              completedAt: {
-                exists: false,
-              },
+          },
+          {
+            completedAt: {
+              exists: false,
             },
-          ],
-        },
-        limit: 1000, // Process in batches
-      })
+          },
+        ],
+      },
+      limit: 1000, // Process in batches
+    })
 
-      let deletedCount = 0
+    let deletedCount = 0
 
-      // Delete expired challenges
-      for (const challenge of expiredChallenges.docs) {
-        try {
-          await req.payload.delete({
-            collection: 'challenges',
-            id: challenge.id,
-          })
-          deletedCount++
-        } catch (error) {
-          console.error(`Error deleting challenge ${challenge.id}:`, error)
-        }
-      }
-
-      console.log(`Expired challenges cleanup: Deleted ${deletedCount} expired incomplete challenges`)
-      return {
-        output: {
-          success: true,
-          deletedCount,
-        },
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error('Error in expireChallengesJob:', errorMessage)
-      return {
-        state: 'failed' as const,
-        errorMessage,
+    // Delete expired challenges
+    for (const challenge of expiredChallenges.docs) {
+      try {
+        await payload.delete({
+          collection: 'challenges',
+          id: challenge.id,
+        })
+        deletedCount++
+      } catch (error) {
+        console.error(`Error deleting challenge ${challenge.id}:`, error)
       }
     }
-  },
+
+    console.log(`✅ [TASK] Expired challenges cleanup completed: Deleted ${deletedCount} expired incomplete challenges`)
+
+    return {
+      success: true,
+      deletedCount,
+      timestamp,
+      message: `Deleted ${deletedCount} expired incomplete challenges`,
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('❌ [TASK] Error in expired challenges cleanup:', errorMessage)
+    throw error
+  }
 }

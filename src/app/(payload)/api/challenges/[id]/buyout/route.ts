@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
-import type { Challenge, User, Reward } from '@/payload-types'
+import type { Reward } from '@/payload-types'
 import { RewardService } from '@/services/rewardService'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -48,7 +48,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Check if challenge can be bought out
-    const cost = (challenge as Challenge).cost || 0
+    if (typeof challenge.cost !== 'number') {
+      throw new Error(`Challenge ${challengeId} missing cost field`)
+    }
+
+    const cost = challenge.cost
     if (cost <= 0) {
       return NextResponse.json(
         {
@@ -59,7 +63,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Check if already completed
-    if ((challenge as Challenge).completedAt) {
+    if (challenge.completedAt) {
       return NextResponse.json(
         {
           error: 'Challenge is already completed',
@@ -68,7 +72,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
     }
 
-    // Get user to check coins (use transaction-like pattern)
+    // Get user to check coins
     const user = await payload.findByID({
       collection: 'users',
       id: userId,
@@ -83,8 +87,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
     }
 
-    // Note: coins field may not be in User type yet, but we'll access it safely
-    const userCoins = (user as User as { coins?: number }).coins || 0
+    if (typeof user.coins !== 'number') {
+      throw new Error(`User ${userId} missing coins field`)
+    }
+
+    const userCoins = user.coins
 
     // Validate user has enough coins
     if (userCoins < cost) {
@@ -116,15 +123,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
 
     // Activate the reward
-    const reward = (challenge as Challenge).reward
+    const reward = challenge.reward
     if (reward) {
-      const rewardData: Reward =
-        typeof reward === 'string'
-          ? ((await payload.findByID({
-              collection: 'rewards',
-              id: reward,
-            })) as Reward)
-          : (reward as Reward)
+      let rewardData: Reward
+      
+      if (typeof reward === 'string') {
+        const fetchedReward = await payload.findByID({
+          collection: 'rewards',
+          id: reward,
+        })
+        if (!fetchedReward) {
+          throw new Error(`Reward ${reward} not found`)
+        }
+        rewardData = fetchedReward
+      } else {
+        rewardData = reward
+      }
 
       if (rewardData) {
         await RewardService.activateReward(payload, userId, rewardData, challengeId)

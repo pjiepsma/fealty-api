@@ -103,9 +103,8 @@ export const Challenges: CollectionConfig = {
       name: 'reward',
       type: 'relationship',
       relationTo: 'rewards',
-      required: true,
       admin: {
-        description: 'The assigned reward for this challenge',
+        description: 'The assigned reward for this challenge (optional - coin challenges give coins directly)',
       },
     },
     {

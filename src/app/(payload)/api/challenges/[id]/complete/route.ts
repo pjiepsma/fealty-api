@@ -93,19 +93,53 @@ export async function POST(
       },
     })
 
+    // Give coins bonus based on difficulty (always, regardless of reward)
+    if (!challenge.rewardDifficulty) {
+      throw new Error(`Challenge ${challengeId} missing rewardDifficulty`)
+    }
+
+    const coinsToAdd = challenge.rewardDifficulty
+    if (coinsToAdd > 0) {
+      const user = await payload.findByID({
+        collection: 'users',
+        id: userId,
+      })
+
+      if (typeof user.coins !== 'number') {
+        throw new Error(`User ${userId} missing coins field`)
+      }
+
+      const currentCoins = user.coins
+      await payload.update({
+        collection: 'users',
+        id: userId,
+        data: {
+          coins: currentCoins + coinsToAdd,
+        },
+      })
+
+      console.log(`[CHALLENGE] Added ${coinsToAdd} coins to user ${userId} for completing challenge ${challengeId} (total: ${currentCoins + coinsToAdd})`)
+    }
+
     // Activate the reward
     const reward = challenge.reward
     if (reward) {
-      const rewardData: Reward = typeof reward === 'string'
-        ? await payload.findByID({
-            collection: 'rewards',
-            id: reward,
-          }) as Reward
-        : reward as Reward
-
-      if (rewardData) {
-        await RewardService.activateReward(payload, userId, rewardData, challengeId)
+      let rewardData: Reward
+      
+      if (typeof reward === 'string') {
+        const fetchedReward = await payload.findByID({
+          collection: 'rewards',
+          id: reward,
+        })
+        if (!fetchedReward) {
+          throw new Error(`Reward ${reward} not found`)
+        }
+        rewardData = fetchedReward
+      } else {
+        rewardData = reward
       }
+
+      await RewardService.activateReward(payload, userId, rewardData, challengeId)
     } 
 
     return NextResponse.json({

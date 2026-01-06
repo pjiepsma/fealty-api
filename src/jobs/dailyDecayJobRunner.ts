@@ -1,25 +1,125 @@
-import type { PayloadRequest } from 'payload'
-import { dailyDecayTask } from './dailyDecayJob'
+import { getPayload } from 'payload'
+import config from '@payload-config'
+import type { User } from '@/payload-types'
 
-export async function runDailyDecay(req: PayloadRequest): Promise<{ success: boolean; processedCount: number; decayedUsersCount: number }> {
+export const runDailyDecay = async () => {
+  const timestamp = new Date().toISOString()
+  console.log(`[TASK] 📉 Daily decay started at ${timestamp}`)
+
   try {
-    console.log('[MAINTENANCE] 📉 Starting daily decay...')
+    const payload = await getPayload({ config })
 
-    const result = await dailyDecayTask.handler({ req })
+    // Get game config for decay settings
+    const gameConfig = await payload.findGlobal({
+      slug: 'game-config',
+    })
 
-    if (result.state === 'failed') {
-      console.error('[MAINTENANCE] ❌ Daily decay failed:', result.errorMessage)
-      return { success: false, processedCount: 0, decayedUsersCount: 0 }
+    type GameConfigType = { defaultDecayPercentage?: number; maxDecayReduction?: number }
+    const typedConfig = gameConfig as GameConfigType
+
+    if (typeof typedConfig.defaultDecayPercentage !== 'number') {
+      throw new Error('Game config missing required field: defaultDecayPercentage')
+    }
+    if (typeof typedConfig.maxDecayReduction !== 'number') {
+      throw new Error('Game config missing required field: maxDecayReduction')
     }
 
-    const processedCount = (result.output as any)?.processedCount || 0
-    const decayedUsersCount = (result.output as any)?.decayedUsersCount || 0
+    const defaultDecayPercentage = typedConfig.defaultDecayPercentage
+    const maxDecayReduction = typedConfig.maxDecayReduction
 
-    console.log(`[MAINTENANCE] ✅ Daily decay completed: ${processedCount} users processed, ${decayedUsersCount} users decayed`)
+    const minimumDecayPercentage = Math.max(0, defaultDecayPercentage - maxDecayReduction)
 
-    return { success: true, processedCount, decayedUsersCount }
+    // Get all users with totalSeconds > 0
+    const users = await payload.find({
+      collection: 'users',
+      where: {
+        totalSeconds: {
+          greater_than: 0,
+        },
+      },
+      limit: 1000, // Process in batches if needed
+    })
+
+    let processedCount = 0
+    let decayedUsersCount = 0
+
+    for (const user of users.docs) {
+      try {
+        const totalSeconds = user.totalSeconds || 0
+
+        if (totalSeconds <= 0) {
+          continue
+        }
+
+        // Get user's active decay_reduction rewards
+        const activeRewards = (user.activeRewards || []).filter(
+          (reward: NonNullable<User['activeRewards']>[number]) => {
+            if (!reward.isActive || reward.rewardType !== 'decay_reduction') {
+              return false
+            }
+
+            // Check if reward has expired based on activatedAt + duration
+            if (reward.activatedAt && reward.duration) {
+              const activatedTime = new Date(reward.activatedAt).getTime()
+              const durationMs = reward.duration * 60 * 60 * 1000
+              const expiresAt = activatedTime + durationMs
+              return expiresAt > new Date().getTime()
+            }
+
+            // If no duration/activation time, consider it active (unlimited)
+            return true
+          }
+        )
+
+        // Calculate total decay reduction from active rewards
+        const totalDecayReduction = activeRewards.reduce((sum: number, reward: NonNullable<User['activeRewards']>[number]) => {
+          return sum + (reward.rewardValue || 0)
+        }, 0)
+
+        // Calculate user's decay percentage (default - reduction, minimum configurable)
+        const userDecayPercentage = Math.max(
+          minimumDecayPercentage,
+          defaultDecayPercentage - totalDecayReduction
+        )
+
+        // Apply decay
+        const decayMultiplier = 1.0 - userDecayPercentage / 100.0
+        const newTotalSeconds = Math.max(1, Math.floor(totalSeconds * decayMultiplier))
+
+        // Only update if there's a change
+        if (newTotalSeconds !== totalSeconds) {
+          await payload.update({
+            collection: 'users',
+            id: user.id,
+            data: {
+              totalSeconds: newTotalSeconds,
+            },
+          })
+
+          decayedUsersCount++
+          console.log(
+            `Daily decay for user ${user.id}: ${totalSeconds} → ${newTotalSeconds} (${userDecayPercentage.toFixed(1)}% decay)`
+          )
+        }
+
+        processedCount++
+      } catch (error) {
+        console.error(`Error processing decay for user ${user.id}:`, error)
+      }
+    }
+
+    console.log(`✅ [TASK] Daily decay completed: Processed ${processedCount} users, applied decay to ${decayedUsersCount} users`)
+
+    return {
+      success: true,
+      processedCount,
+      decayedUsersCount,
+      timestamp,
+      message: `Processed ${processedCount} users, applied decay to ${decayedUsersCount} users`,
+    }
   } catch (error) {
-    console.error('[MAINTENANCE] Error running daily decay:', error)
-    return { success: false, processedCount: 0, decayedUsersCount: 0 }
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('❌ [TASK] Error in daily decay:', errorMessage)
+    throw error
   }
 }

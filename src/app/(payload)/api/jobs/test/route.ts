@@ -1,11 +1,10 @@
-import { getPayload } from 'payload'
-import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
-import { assignDailyChallengesTask, assignWeeklyChallengesTask, assignMonthlyChallengesTask } from '@/jobs/assignChallengesJob'
-import { expireChallengesTask } from '@/jobs/expireChallengesJob'
-import { dailyDecayTask } from '@/jobs/dailyDecayJob'
-import { pulseTask } from '@/jobs/pulseJob'
-import type { PayloadRequest } from 'payload'
+import { runAssignDailyChallenges } from '@/jobs/assignDailyChallengesJobRunner'
+import { runAssignWeeklyChallenges } from '@/jobs/assignWeeklyChallengesJobRunner'
+import { runAssignMonthlyChallenges } from '@/jobs/assignMonthlyChallengesJobRunner'
+import { runExpireChallenges } from '@/jobs/expireChallengesJobRunner'
+import { runDailyDecay } from '@/jobs/dailyDecayJobRunner'
+import { runPulse } from '@/jobs/pulseJob'
 
 type JobSlug =
   | 'pulse'
@@ -15,18 +14,17 @@ type JobSlug =
   | 'expire-challenges'
   | 'daily-decay'
 
-const jobHandlers: Record<JobSlug, typeof assignDailyChallengesTask> = {
-  'pulse': pulseTask,
-  'assign-daily-challenges': assignDailyChallengesTask,
-  'assign-weekly-challenges': assignWeeklyChallengesTask,
-  'assign-monthly-challenges': assignMonthlyChallengesTask,
-  'expire-challenges': expireChallengesTask,
-  'daily-decay': dailyDecayTask,
+const jobHandlers: Record<JobSlug, () => Promise<unknown>> = {
+  'pulse': runPulse,
+  'assign-daily-challenges': runAssignDailyChallenges,
+  'assign-weekly-challenges': runAssignWeeklyChallenges,
+  'assign-monthly-challenges': runAssignMonthlyChallenges,
+  'expire-challenges': runExpireChallenges,
+  'daily-decay': runDailyDecay,
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await getPayload({ config })
     const body = await request.json()
     const { jobSlug } = body
 
@@ -57,10 +55,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get the task config for this job
-    const taskConfig = jobHandlers[jobSlug as JobSlug]
-    
-    if (!taskConfig) {
+    // Get the job runner function
+    const jobRunner = jobHandlers[jobSlug as JobSlug]
+
+    if (!jobRunner) {
       return NextResponse.json(
         {
           error: `Handler not found for job: ${jobSlug}`,
@@ -69,30 +67,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create a minimal PayloadRequest object
-    // Using a simpler approach: just pass payload and let the handler work with it
-    const mockReq = {
-      payload,
-      user: null, // Jobs run as system/admin
-    } as unknown as PayloadRequest
-
-    // Execute the job handler directly
-    // The handler expects { req, input } as arguments
-    // Type assertion needed because TypeScript can't infer the handler type correctly
-    const handler = taskConfig.handler
-    if (typeof handler !== 'function') {
-      return NextResponse.json(
-        {
-          error: `Invalid handler for job: ${jobSlug}`,
-        },
-        { status: 500 },
-      )
-    }
-    
-    const result = await (handler as (args: { req: PayloadRequest; input: unknown }) => Promise<unknown>)({
-      req: mockReq,
-      input: {},
-    })
+    // Execute the job runner directly
+    const result = await jobRunner()
 
     return NextResponse.json({
       success: true,

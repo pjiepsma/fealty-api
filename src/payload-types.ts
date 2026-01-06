@@ -74,7 +74,6 @@ export interface Config {
     rewards: Reward;
     challenges: Challenge;
     'payload-kv': PayloadKv;
-    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -88,7 +87,6 @@ export interface Config {
     rewards: RewardsSelect<false> | RewardsSelect<true>;
     challenges: ChallengesSelect<false> | ChallengesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
-    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -101,33 +99,18 @@ export interface Config {
     'challenge-config': ChallengeConfig;
     'game-config': GameConfig;
     mail: Mail;
-    'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     'challenge-config': ChallengeConfigSelect<false> | ChallengeConfigSelect<true>;
     'game-config': GameConfigSelect<false> | GameConfigSelect<true>;
     mail: MailSelect<false> | MailSelect<true>;
-    'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
   user: User & {
     collection: 'users';
   };
   jobs: {
-    tasks: {
-      'assign-daily-challenges': TaskAssignDailyChallenges;
-      'assign-weekly-challenges': TaskAssignWeeklyChallenges;
-      'assign-monthly-challenges': TaskAssignMonthlyChallenges;
-      'expire-challenges': TaskExpireChallenges;
-      'daily-decay': TaskDailyDecay;
-      'expire-old-rewards': TaskExpireOldRewards;
-      'expire-season-rewards': TaskExpireSeasonRewards;
-      'calculate-king-status': TaskCalculateKingStatus;
-      inline: {
-        input: unknown;
-        output: unknown;
-      };
-    };
+    tasks: unknown;
     workflows: unknown;
   };
 }
@@ -511,9 +494,9 @@ export interface Challenge {
    */
   cost?: number | null;
   /**
-   * The assigned reward for this challenge
+   * The assigned reward for this challenge (optional - coin challenges give coins directly)
    */
-  reward: string | Reward;
+  reward?: (string | null) | Reward;
   /**
    * Current progress towards the challenge
    */
@@ -522,10 +505,6 @@ export interface Challenge {
    * When the challenge was completed
    */
   completedAt?: string | null;
-  /**
-   * When the reward was claimed
-   */
-  claimedAt?: string | null;
   /**
    * When the challenge expires (for daily/weekly/monthly)
    */
@@ -549,128 +528,6 @@ export interface PayloadKv {
     | number
     | boolean
     | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs".
- */
-export interface PayloadJob {
-  id: string;
-  /**
-   * Input data provided to the job
-   */
-  input?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  taskStatus?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  completedAt?: string | null;
-  totalTried?: number | null;
-  /**
-   * If hasError is true this job will not be retried
-   */
-  hasError?: boolean | null;
-  /**
-   * If hasError is true, this is the error that caused it
-   */
-  error?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  /**
-   * Task execution log
-   */
-  log?:
-    | {
-        executedAt: string;
-        completedAt: string;
-        taskSlug:
-          | 'inline'
-          | 'assign-daily-challenges'
-          | 'assign-weekly-challenges'
-          | 'assign-monthly-challenges'
-          | 'expire-challenges'
-          | 'daily-decay'
-          | 'expire-old-rewards'
-          | 'expire-season-rewards'
-          | 'calculate-king-status';
-        taskID: string;
-        input?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        output?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        state: 'failed' | 'succeeded';
-        error?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        id?: string | null;
-      }[]
-    | null;
-  taskSlug?:
-    | (
-        | 'inline'
-        | 'assign-daily-challenges'
-        | 'assign-weekly-challenges'
-        | 'assign-monthly-challenges'
-        | 'expire-challenges'
-        | 'daily-decay'
-        | 'expire-old-rewards'
-        | 'expire-season-rewards'
-        | 'calculate-king-status'
-      )
-    | null;
-  queue?: string | null;
-  waitUntil?: string | null;
-  processing?: boolean | null;
-  meta?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -899,7 +756,6 @@ export interface ChallengesSelect<T extends boolean = true> {
   reward?: T;
   progress?: T;
   completedAt?: T;
-  claimedAt?: T;
   expiresAt?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -911,38 +767,6 @@ export interface ChallengesSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs_select".
- */
-export interface PayloadJobsSelect<T extends boolean = true> {
-  input?: T;
-  taskStatus?: T;
-  completedAt?: T;
-  totalTried?: T;
-  hasError?: T;
-  error?: T;
-  log?:
-    | T
-    | {
-        executedAt?: T;
-        completedAt?: T;
-        taskSlug?: T;
-        taskID?: T;
-        input?: T;
-        output?: T;
-        state?: T;
-        error?: T;
-        id?: T;
-      };
-  taskSlug?: T;
-  queue?: T;
-  waitUntil?: T;
-  processing?: T;
-  meta?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1387,24 +1211,6 @@ export interface Mail {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs-stats".
- */
-export interface PayloadJobsStat {
-  id: string;
-  stats?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "challenge-config_select".
  */
 export interface ChallengeConfigSelect<T extends boolean = true> {
@@ -1662,80 +1468,6 @@ export interface MailSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs-stats_select".
- */
-export interface PayloadJobsStatsSelect<T extends boolean = true> {
-  stats?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskAssign-daily-challenges".
- */
-export interface TaskAssignDailyChallenges {
-  input?: unknown;
-  output?: unknown;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskAssign-weekly-challenges".
- */
-export interface TaskAssignWeeklyChallenges {
-  input?: unknown;
-  output?: unknown;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskAssign-monthly-challenges".
- */
-export interface TaskAssignMonthlyChallenges {
-  input?: unknown;
-  output?: unknown;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskExpire-challenges".
- */
-export interface TaskExpireChallenges {
-  input?: unknown;
-  output?: unknown;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskDaily-decay".
- */
-export interface TaskDailyDecay {
-  input?: unknown;
-  output?: unknown;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskExpire-old-rewards".
- */
-export interface TaskExpireOldRewards {
-  input?: unknown;
-  output?: unknown;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskExpire-season-rewards".
- */
-export interface TaskExpireSeasonRewards {
-  input?: unknown;
-  output?: unknown;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskCalculate-king-status".
- */
-export interface TaskCalculateKingStatus {
-  input?: unknown;
-  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

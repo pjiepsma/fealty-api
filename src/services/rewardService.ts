@@ -69,22 +69,8 @@ export class RewardService {
       usesRemaining = reward.rewardUses
     }
 
-    // Handle coin rewards - add coins directly to user balance
-    if (reward.rewardType === 'coins') {
-      const userCoins = (user as User as { coins?: number }).coins || 0
-      const coinsToAdd = reward.rewardValue || 0
-      
-      await payload.update({
-        collection: 'users',
-        id: userId,
-        data: {
-          coins: userCoins + coinsToAdd,
-        },
-      })
-      
-      console.log(`Added ${coinsToAdd} coins to user ${userId} (total: ${userCoins + coinsToAdd})`)
-      return
-    }
+    // Note: Coins are now handled directly in challenge completion logic
+    // No more coin reward types - coins are a separate bonus system
 
     // Season-based rewards (like bonus_crowns) are unlimited
     if (reward.rewardType === 'bonus_crowns') {
