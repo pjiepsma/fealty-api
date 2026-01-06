@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import { runAssignDailyChallenges } from '@/jobs/assignDailyChallengesJobRunner'
 import { runAssignWeeklyChallenges } from '@/jobs/assignWeeklyChallengesJobRunner'
 import { runAssignMonthlyChallenges } from '@/jobs/assignMonthlyChallengesJobRunner'
+import { runExpireChallenges } from '@/jobs/expireChallengesJobRunner'
+import { runExpireOldRewards } from '@/jobs/expireOldRewardsJobRunner'
+import { runExpireSeasonRewards } from '@/jobs/expireSeasonRewardsJobRunner'
+import { runCalculateKingStatus } from '@/jobs/calculateKingStatusJobRunner'
+import { runDailyDecay } from '@/jobs/dailyDecayJobRunner'
 
 /**
  * Validates cron job requests using CRON_SECRET authentication
@@ -64,6 +69,24 @@ export async function GET(req: Request) {
   console.log('[CRON] Running daily challenges...')
   results.dailyChallenges = await runAssignDailyChallenges()
 
+  // ALWAYS run daily maintenance jobs
+  console.log('[CRON] 🧹 Running daily maintenance jobs...')
+
+  console.log('[CRON] Cleaning up expired challenges...')
+  results.expireChallenges = await runExpireChallenges(req as any)
+
+  console.log('[CRON] Cleaning up expired rewards...')
+  results.expireOldRewards = await runExpireOldRewards(req as any)
+
+  console.log('[CRON] Expiring season rewards...')
+  results.expireSeasonRewards = await runExpireSeasonRewards(req as any)
+
+  console.log('[CRON] Calculating king status...')
+  results.calculateKingStatus = await runCalculateKingStatus(req as any)
+
+  console.log('[CRON] Applying daily decay...')
+  results.dailyDecay = await runDailyDecay(req as any)
+
   // Run weekly challenges on Mondays (day 1)
   if (dayOfWeek === 1) {
     console.log('[CRON] 📅 Monday detected! Running weekly challenges...')
@@ -100,6 +123,24 @@ export async function POST(req: Request) {
   // ALWAYS run daily challenges
   console.log('[CRON] Running daily challenges...')
   results.dailyChallenges = await runAssignDailyChallenges()
+
+  // ALWAYS run daily maintenance jobs
+  console.log('[CRON] 🧹 Running daily maintenance jobs...')
+
+  console.log('[CRON] Cleaning up expired challenges...')
+  results.expireChallenges = await runExpireChallenges(req as any)
+
+  console.log('[CRON] Cleaning up expired rewards...')
+  results.expireOldRewards = await runExpireOldRewards(req as any)
+
+  console.log('[CRON] Expiring season rewards...')
+  results.expireSeasonRewards = await runExpireSeasonRewards(req as any)
+
+  console.log('[CRON] Calculating king status...')
+  results.calculateKingStatus = await runCalculateKingStatus(req as any)
+
+  console.log('[CRON] Applying daily decay...')
+  results.dailyDecay = await runDailyDecay(req as any)
 
   // Run weekly challenges on Mondays (day 1)
   if (dayOfWeek === 1) {
