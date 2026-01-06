@@ -112,7 +112,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       id: challengeId,
       data: {
         completedAt: new Date().toISOString(),
-        claimedAt: new Date().toISOString(),
       },
     })
 

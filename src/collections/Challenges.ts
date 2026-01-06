@@ -124,13 +124,6 @@ export const Challenges: CollectionConfig = {
       },
     },
     {
-      name: 'claimedAt',
-      type: 'date',
-      admin: {
-        description: 'When the reward was claimed',
-      },
-    },
-    {
       name: 'expiresAt',
       type: 'date',
       required: true,
