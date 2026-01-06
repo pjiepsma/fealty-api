@@ -28,13 +28,22 @@ export interface GeneratedChallenge {
 export async function generateChallengesForUser(
   req: PayloadRequest,
   userId: string,
-  period: Period
+  period: Period,
 ): Promise<GeneratedChallenge[]> {
   const count = await getGenerationCount(req, period)
   const challenges: GeneratedChallenge[] = []
 
   // Get available challenge types
-  const challengeTypes: ChallengeType[] = ['entry_count', 'crown_claim', 'session_duration', 'longest_session', 'unique_pois', 'category_variety', 'category_similarity', 'new_location']
+  const challengeTypes: ChallengeType[] = [
+    'entry_count',
+    'crown_claim',
+    'session_duration',
+    'longest_session',
+    'unique_pois',
+    'category_variety',
+    'category_similarity',
+    'new_location',
+  ]
 
   // Select difficulty tiers (aim for variety: easy, medium, hard)
   const selectedTiers = selectDifficultyTiers(count)
@@ -49,7 +58,7 @@ export async function generateChallengesForUser(
   // Generate challenges
   for (let i = 0; i < count && i < selectedTiers.length; i++) {
     const tier = selectedTiers[i]
-    
+
     // If no more unique types available, break
     if (availableTypes.length === 0) {
       console.warn(`Cannot generate more unique challenges for ${period}, all types used`)
@@ -59,7 +68,7 @@ export async function generateChallengesForUser(
     // Select a random challenge type from available types (excluding used ones)
     const randomIndex = Math.floor(Math.random() * availableTypes.length)
     const challengeType = availableTypes[randomIndex]
-    
+
     // Remove selected type from available types to prevent duplicates
     availableTypes.splice(randomIndex, 1)
     usedTypes.push(challengeType)
@@ -77,14 +86,18 @@ export async function generateChallengesForUser(
       // Longest session: maximum 60 minutes (3600 seconds) for all periods
       const maxSeconds = 3600 // 60 minutes
       if (targetValue > maxSeconds) {
-        console.warn(`${period} ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`)
+        console.warn(
+          `${period} ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`,
+        )
         targetValue = maxSeconds
       }
     } else if (period === 'daily' && challengeType === 'session_duration') {
       // Daily session duration: maximum 60 minutes (3600 seconds)
       const maxSeconds = 3600 // 60 minutes
       if (targetValue > maxSeconds) {
-        console.warn(`Daily ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`)
+        console.warn(
+          `Daily ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`,
+        )
         targetValue = maxSeconds
       }
     }
@@ -132,13 +145,22 @@ export async function generateChallengesForUser(
  */
 export async function generateSharedChallenges(
   req: PayloadRequest,
-  period: Period
+  period: Period,
 ): Promise<GeneratedChallenge[]> {
   const count = await getGenerationCount(req, period)
   const challenges: GeneratedChallenge[] = []
 
   // Get available challenge types
-  const challengeTypes: ChallengeType[] = ['entry_count', 'crown_claim', 'session_duration', 'longest_session', 'unique_pois', 'category_variety', 'category_similarity', 'new_location']
+  const challengeTypes: ChallengeType[] = [
+    'entry_count',
+    'crown_claim',
+    'session_duration',
+    'longest_session',
+    'unique_pois',
+    'category_variety',
+    'category_similarity',
+    'new_location',
+  ]
 
   // Select difficulty tiers
   const selectedTiers = selectDifficultyTiers(count)
@@ -164,14 +186,18 @@ export async function generateSharedChallenges(
       // Longest session: maximum 60 minutes (3600 seconds) for all periods
       const maxSeconds = 3600 // 60 minutes
       if (targetValue > maxSeconds) {
-        console.warn(`${period} ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`)
+        console.warn(
+          `${period} ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`,
+        )
         targetValue = maxSeconds
       }
     } else if (period === 'daily' && challengeType === 'session_duration') {
       // Daily session duration: maximum 60 minutes (3600 seconds)
       const maxSeconds = 3600 // 60 minutes
       if (targetValue > maxSeconds) {
-        console.warn(`Daily ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`)
+        console.warn(
+          `Daily ${challengeType} challenge: targetValue ${targetValue}s exceeds 60 minute limit, capping at ${maxSeconds}s`,
+        )
         targetValue = maxSeconds
       }
     }
@@ -277,10 +303,3 @@ function shuffleArray<T>(array: T[]): T[] {
   }
   return shuffled
 }
-
-
-
-
-
-
-

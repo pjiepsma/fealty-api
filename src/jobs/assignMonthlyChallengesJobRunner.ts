@@ -5,15 +5,15 @@ import config from '@payload-config'
  * Get or create a coin reward for the given difficulty
  * Coin reward gives coins equal to the difficulty level
  */
-async function getOrCreateCoinReward(payload: Awaited<ReturnType<typeof getPayload>>, difficulty: number) {
+async function getOrCreateCoinReward(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  difficulty: number,
+) {
   // Try to find existing coin reward for this difficulty
   const existingRewards = await payload.find({
     collection: 'rewards',
     where: {
-      and: [
-        { difficulty: { equals: difficulty } },
-        { rewardType: { equals: 'coins' } },
-      ],
+      and: [{ difficulty: { equals: difficulty } }, { rewardType: { equals: 'coins' } }],
     },
     limit: 1,
   })
@@ -81,12 +81,16 @@ export const runAssignMonthlyChallenges = async () => {
 
         const { generateChallengesForUser } = await import('../services/challengeGenerator')
         const generatedChallenges = await generateChallengesForUser(
-          { payload } as Awaited<ReturnType<typeof getPayload>> extends { payload: infer P } ? { payload: P } : never,
+          { payload } as Awaited<ReturnType<typeof getPayload>> extends { payload: infer P }
+            ? { payload: P }
+            : never,
           user.id,
           'monthly',
         )
 
-        console.log(`[TASK] Generated ${generatedChallenges.length} monthly challenges for user ${user.id}`)
+        console.log(
+          `[TASK] Generated ${generatedChallenges.length} monthly challenges for user ${user.id}`,
+        )
 
         for (const challengeData of generatedChallenges) {
           try {
@@ -123,7 +127,9 @@ export const runAssignMonthlyChallenges = async () => {
       }
     }
 
-    console.log(`✅ [TASK] Monthly challenges assignment completed: ${assignedCount} assigned, ${errorCount} errors`)
+    console.log(
+      `✅ [TASK] Monthly challenges assignment completed: ${assignedCount} assigned, ${errorCount} errors`,
+    )
 
     return {
       output: {
@@ -140,4 +146,3 @@ export const runAssignMonthlyChallenges = async () => {
     throw error
   }
 }
-

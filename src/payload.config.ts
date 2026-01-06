@@ -15,7 +15,6 @@ import { getSelectedEmailAdapter } from './lib/email-adapters/selectEmailAdapter
 import { ChallengeConfig } from './globals/ChallengeConfig/challengeConfig'
 import { GameConfig } from './globals/GameConfig/gameConfig'
 import { Mail } from './globals/Mail/mail'
-import { generateBlurHandler } from '@/payload/jobs/generate-blur'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -92,25 +91,7 @@ export default buildConfig({
         hidden: false, // Keep jobs visible in Admin
       },
     }),
-    tasks: [
-      {
-        slug: 'generate-blur',
-        /**
-         * Conditionally attach schedule when ENABLE_PAYLOAD_TASK_SCHEDULE === 'true'
-         * @description On serverless, keep this empty and rely on Vercel Cron hitting an API route.
-         */
-        schedule:
-          process.env.ENABLE_PAYLOAD_TASK_SCHEDULE === 'true'
-            ? [
-                {
-                  cron: '0 0 * * *', // Run daily
-                  queue: 'default',
-                },
-              ]
-            : [],
-        handler: generateBlurHandler,
-      },
-    ],
+    tasks: [],
   },
   plugins: [],
 })

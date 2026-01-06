@@ -89,4 +89,3 @@ export const Rewards: CollectionConfig = {
     },
   ],
 }
-
