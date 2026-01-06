@@ -6,8 +6,8 @@
   },
   "crons": [
     {
-      "path": "/api/payload-jobs/run",
-      "schedule": "59 23 * * *"
+      "path": "/api/payload-cron",
+      "schedule": "15 0 * * *"
     }
   ],
   "functions": {

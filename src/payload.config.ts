@@ -50,30 +50,31 @@ export default buildConfig({
   sharp,
   email: getSelectedEmailAdapter(),
   jobs: {
+    /**
+     * Conditionally enable autoRun based on environment
+     * @description Serverless environments (e.g., Vercel) should disable in-process schedulers.
+     * Set ENABLE_PAYLOAD_AUTORUN="true" locally or on traditional servers to turn this on.
+     * Source: https://dev.to/aaronksaunders/run-payload-jobs-on-vercel-serverless-step-by-step-migration-aj9
+     */
+    autoRun:
+      process.env.ENABLE_PAYLOAD_AUTORUN === 'true'
+        ? [
+            {
+              cron: '0 0 * * *', // Process jobs daily
+              queue: 'default',
+            },
+          ]
+        : [],
     access: {
       run: ({ req }) => {
-        console.log('🔍 /api/payload-jobs/run accessed')
-        
-        // Allow logged-in users to execute this endpoint
-        if (req.user) {
-          console.log('✅ Authenticated via user session')
-          return true
-        }
+        if (req.user) return true
 
-        // Check for Vercel Cron secret
-        // Source: https://buildwithmatija.com/payload/payload-jobs-vercel
         const authHeader = req.headers.get('authorization')
-        console.log('🔍 Auth header:', authHeader ? `${authHeader.substring(0, 30)}...` : 'NONE')
-        console.log('🔍 CRON_SECRET exists:', !!process.env.CRON_SECRET)
-        
         if (!process.env.CRON_SECRET) {
-          console.warn('❌ CRON_SECRET not set')
+          console.warn('CRON_SECRET environment variable is not set')
           return false
         }
-        
-        const isAuthorized = authHeader === `Bearer ${process.env.CRON_SECRET}`
-        console.log('🔐 Auth result:', isAuthorized ? 'PASS' : 'FAIL')
-        return isAuthorized
+        return authHeader === `Bearer ${process.env.CRON_SECRET}`
       },
       queue: () => true,
       cancel: () => true,
@@ -87,17 +88,27 @@ export default buildConfig({
         update: ({ req }) => !!req.user,
         delete: ({ req }) => !!req.user,
       },
+      admin: {
+        hidden: false, // Keep jobs visible in Admin
+      },
     }),
     tasks: [
       {
         slug: 'generate-blur',
-        inputSchema: [
-          { name: 'docId', type: 'text', required: true },
-          { name: 'collection', type: 'text', required: true },
-        ],
-        outputSchema: [{ name: 'message', type: 'text', required: true }],
+        /**
+         * Conditionally attach schedule when ENABLE_PAYLOAD_TASK_SCHEDULE === 'true'
+         * @description On serverless, keep this empty and rely on Vercel Cron hitting an API route.
+         */
+        schedule:
+          process.env.ENABLE_PAYLOAD_TASK_SCHEDULE === 'true'
+            ? [
+                {
+                  cron: '0 0 * * *', // Run daily
+                  queue: 'default',
+                },
+              ]
+            : [],
         handler: generateBlurHandler,
-        retries: 1,
       },
     ],
   },
