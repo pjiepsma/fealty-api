@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { runAssignDailyChallenges } from '@/jobs/assignDailyChallengesJobRunner'
+import { runAssignWeeklyChallenges } from '@/jobs/assignWeeklyChallengesJobRunner'
+import { runAssignMonthlyChallenges } from '@/jobs/assignMonthlyChallengesJobRunner'
 
 /**
  * Validates cron job requests using CRON_SECRET authentication
@@ -42,28 +44,75 @@ const isAuthorized = (req: Request): boolean => {
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  console.log('[CRON] 🔔 Processing daily challenges assignment request')
+  console.log('[CRON] 🔔 Processing scheduled jobs request')
 
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  console.log('[CRON] Authorization successful, running daily challenges assignment...')
-  const result = await runAssignDailyChallenges()
-  console.log('[CRON] ✅ Task completed:', result)
-  return NextResponse.json(result)
+  console.log('[CRON] Authorization successful, determining which jobs to run...')
+
+  const now = new Date()
+  const dayOfWeek = now.getUTCDay() // 0 = Sunday, 1 = Monday, etc.
+  const dayOfMonth = now.getUTCDate() // 1-31
+
+  console.log(`[CRON] Date check: Day of week=${dayOfWeek}, Day of month=${dayOfMonth}`)
+
+  const results: Record<string, unknown> = {}
+
+  // ALWAYS run daily challenges
+  console.log('[CRON] Running daily challenges...')
+  results.dailyChallenges = await runAssignDailyChallenges()
+
+  // Run weekly challenges on Mondays (day 1)
+  if (dayOfWeek === 1) {
+    console.log('[CRON] 📅 Monday detected! Running weekly challenges...')
+    results.weeklyChallenges = await runAssignWeeklyChallenges()
+  }
+
+  // Run monthly challenges on the 1st of the month
+  if (dayOfMonth === 1) {
+    console.log('[CRON] 📆 First of the month! Running monthly challenges...')
+    results.monthlyChallenges = await runAssignMonthlyChallenges()
+  }
+
+  console.log('[CRON] ✅ All jobs completed:', results)
+  return NextResponse.json(results)
 }
 
 export async function POST(req: Request) {
-  console.log('[CRON] 🔔 Processing daily challenges assignment request (POST)')
+  console.log('[CRON] 🔔 Processing scheduled jobs request (POST)')
 
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  console.log('[CRON] Authorization successful, running daily challenges assignment...')
-  const result = await runAssignDailyChallenges()
-  console.log('[CRON] ✅ Task completed:', result)
-  return NextResponse.json(result)
-}
+  console.log('[CRON] Authorization successful, determining which jobs to run...')
 
+  const now = new Date()
+  const dayOfWeek = now.getUTCDay()
+  const dayOfMonth = now.getUTCDate()
+
+  console.log(`[CRON] Date check: Day of week=${dayOfWeek}, Day of month=${dayOfMonth}`)
+
+  const results: Record<string, unknown> = {}
+
+  // ALWAYS run daily challenges
+  console.log('[CRON] Running daily challenges...')
+  results.dailyChallenges = await runAssignDailyChallenges()
+
+  // Run weekly challenges on Mondays (day 1)
+  if (dayOfWeek === 1) {
+    console.log('[CRON] 📅 Monday detected! Running weekly challenges...')
+    results.weeklyChallenges = await runAssignWeeklyChallenges()
+  }
+
+  // Run monthly challenges on the 1st of the month
+  if (dayOfMonth === 1) {
+    console.log('[CRON] 📆 First of the month! Running monthly challenges...')
+    results.monthlyChallenges = await runAssignMonthlyChallenges()
+  }
+
+  console.log('[CRON] ✅ All jobs completed:', results)
+  return NextResponse.json(results)
+}
