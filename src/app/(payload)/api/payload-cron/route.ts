@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { runGenerateBlur } from '@/payload/jobs/generate-blur'
+import { runAssignDailyChallenges } from '@/jobs/assignDailyChallengesJobRunner'
 
 /**
  * Validates cron job requests using CRON_SECRET authentication
@@ -42,27 +42,27 @@ const isAuthorized = (req: Request): boolean => {
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  console.log('[CRON] 🔔 Processing cron job request')
+  console.log('[CRON] 🔔 Processing daily challenges assignment request')
 
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  console.log('[CRON] Authorization successful, running task...')
-  const result = await runGenerateBlur()
+  console.log('[CRON] Authorization successful, running daily challenges assignment...')
+  const result = await runAssignDailyChallenges()
   console.log('[CRON] ✅ Task completed:', result)
   return NextResponse.json(result)
 }
 
 export async function POST(req: Request) {
-  console.log('[CRON] 🔔 Processing cron job request (POST)')
+  console.log('[CRON] 🔔 Processing daily challenges assignment request (POST)')
 
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  console.log('[CRON] Authorization successful, running task...')
-  const result = await runGenerateBlur()
+  console.log('[CRON] Authorization successful, running daily challenges assignment...')
+  const result = await runAssignDailyChallenges()
   console.log('[CRON] ✅ Task completed:', result)
   return NextResponse.json(result)
 }
