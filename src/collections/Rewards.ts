@@ -17,6 +17,7 @@ export const Rewards: CollectionConfig = {
         { label: 'Extended Capture', value: 'extended_capture' },
         { label: 'Bonus Crowns', value: 'bonus_crowns' },
         { label: 'Decay Reduction', value: 'decay_reduction' },
+        { label: 'Coins', value: 'coins' },
       ],
       admin: {
         description: 'Type of reward',

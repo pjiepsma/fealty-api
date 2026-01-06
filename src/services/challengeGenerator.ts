@@ -104,8 +104,8 @@ export async function generateChallengesForUser(
     // Get reward difficulty (based on period, with category adjustment if applicable)
     const rewardDifficulty = getRewardDifficulty(tier, categoryAdjustment, period)
 
-    // Get cost
-    const cost = await getChallengeCost(req, tier)
+    // Cost equals 10x the difficulty
+    const cost = rewardDifficulty * 10
 
     // Generate title and description
     const title = generateTitle(challengeType, targetValue, period, targetCategory)
@@ -191,8 +191,8 @@ export async function generateSharedChallenges(
     // Get reward difficulty (based on period, with category adjustment if applicable)
     const rewardDifficulty = getRewardDifficulty(tier, categoryAdjustment, period)
 
-    // Get cost
-    const cost = await getChallengeCost(req, tier)
+    // Cost equals 10x the difficulty
+    const cost = rewardDifficulty * 10
 
     // Generate title and description
     const title = generateTitle(challengeType, targetValue, period, targetCategory)

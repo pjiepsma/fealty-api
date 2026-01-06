@@ -2,6 +2,43 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 
 /**
+ * Get or create a coin reward for the given difficulty
+ * Coin reward gives coins equal to the difficulty level
+ */
+async function getOrCreateCoinReward(payload: Awaited<ReturnType<typeof getPayload>>, difficulty: number) {
+  // Try to find existing coin reward for this difficulty
+  const existingRewards = await payload.find({
+    collection: 'rewards',
+    where: {
+      and: [
+        { difficulty: { equals: difficulty } },
+        { rewardType: { equals: 'coins' } },
+      ],
+    },
+    limit: 1,
+  })
+
+  if (existingRewards.docs.length > 0) {
+    return existingRewards.docs[0]
+  }
+
+  // Create new coin reward for this difficulty
+  const coinReward = await payload.create({
+    collection: 'rewards',
+    data: {
+      rewardType: 'coins',
+      rewardValue: difficulty, // Coins equal to difficulty
+      difficulty: difficulty,
+      description: `${difficulty} coin reward`,
+      isActive: true,
+    },
+  })
+
+  console.log(`[TASK] Created coin reward for difficulty ${difficulty}`)
+  return coinReward
+}
+
+/**
  * Standalone runner for assign daily challenges job
  * @description Can be called from API routes without Payload job context
  * Source: Adapted from Aaron Saunders' approach for serverless
@@ -62,7 +99,7 @@ export const runAssignDailyChallenges = async () => {
         // Generate challenges for user
         const { generateChallengesForUser } = await import('../services/challengeGenerator')
         const generatedChallenges = await generateChallengesForUser(
-          { payload } as any,
+          { payload } as Awaited<ReturnType<typeof getPayload>> extends { payload: infer P } ? { payload: P } : never,
           user.id,
           'daily',
         )
@@ -72,35 +109,8 @@ export const runAssignDailyChallenges = async () => {
         // Assign rewards and create challenges
         for (const challengeData of generatedChallenges) {
           try {
-            // Get random reward for the difficulty
-            const rewards = await payload.find({
-              collection: 'rewards',
-              where: {
-                and: [
-                  {
-                    difficulty: {
-                      equals: challengeData.rewardDifficulty,
-                    },
-                  },
-                  {
-                    isActive: {
-                      equals: true,
-                    },
-                  },
-                ],
-              },
-              limit: 100,
-            })
-
-            if (rewards.docs.length === 0) {
-              console.warn(
-                `[TASK] No active rewards found for difficulty ${challengeData.rewardDifficulty}, skipping challenge`,
-              )
-              continue
-            }
-
-            // Pick random reward
-            const randomReward = rewards.docs[Math.floor(Math.random() * rewards.docs.length)]
+            // Get or create coin reward equal to difficulty
+            const coinReward = await getOrCreateCoinReward(payload, challengeData.rewardDifficulty)
 
             // Create challenge
             await payload.create({
@@ -114,7 +124,7 @@ export const runAssignDailyChallenges = async () => {
                 targetValue: challengeData.targetValue,
                 targetCategory: challengeData.targetCategory,
                 rewardDifficulty: challengeData.rewardDifficulty,
-                reward: randomReward.id,
+                reward: coinReward.id,
                 progress: 0,
                 expiresAt: challengeData.expiresAt,
                 cost: challengeData.cost,
