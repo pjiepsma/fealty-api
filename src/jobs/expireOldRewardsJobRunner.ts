@@ -1,26 +1,91 @@
-import type { PayloadRequest } from 'payload'
-import { expireOldRewardsTask } from './expireOldRewardsJob'
+import { getPayload } from 'payload'
+import config from '@payload-config'
+import type { User } from '@/payload-types'
 
-export async function runExpireOldRewards(req: PayloadRequest): Promise<{ success: boolean; processedCount: number; expiredRewardsCount: number }> {
+export async function runExpireOldRewards(): Promise<{ success: boolean; processedCount: number; expiredRewardsCount: number; timestamp: string; message: string }> {
+  const timestamp = new Date().toISOString()
+  console.log(`[TASK] 🧽 Expired rewards cleanup started at ${timestamp}`)
+
   try {
-    console.log('[MAINTENANCE] 🧽 Starting expired rewards cleanup...')
+    const payload = await getPayload({ config })
+    const now = new Date()
 
-    const result = await expireOldRewardsTask.handler({ req })
+    // Get all users with activeRewards
+    const users = await payload.find({
+      collection: 'users',
+      where: {
+        activeRewards: {
+          exists: true,
+        },
+      },
+      limit: 1000,
+    })
 
-    if (result.state === 'failed') {
-      console.error('[MAINTENANCE] ❌ Expired rewards cleanup failed:', result.errorMessage)
-      return { success: false, processedCount: 0, expiredRewardsCount: 0 }
+    let processedCount = 0
+    let expiredRewardsCount = 0
+
+    for (const user of users.docs) {
+      try {
+        const activeRewards = (user.activeRewards || []) as NonNullable<User['activeRewards']>
+
+        // Filter out expired or inactive rewards
+        const validRewards = activeRewards.filter((reward: NonNullable<User['activeRewards']>[number]) => {
+          // Remove inactive rewards
+          if (!reward.isActive) {
+            expiredRewardsCount++
+            return false
+          }
+
+          // Remove expired time-based rewards
+          if (reward.activatedAt && reward.duration) {
+            const activatedTime = new Date(reward.activatedAt).getTime()
+            const durationMs = reward.duration * 60 * 60 * 1000
+            const expiresAt = activatedTime + durationMs
+            if (expiresAt < now.getTime()) {
+              expiredRewardsCount++
+              return false
+            }
+          }
+
+          // Remove use-based rewards with no uses remaining
+          if (reward.usesRemaining != null && reward.usesRemaining <= 0) {
+            expiredRewardsCount++
+            return false
+          }
+
+          return true
+        })
+
+        // Only update if rewards were removed
+        if (validRewards.length !== activeRewards.length) {
+          await payload.update({
+            collection: 'users',
+            id: user.id,
+            data: {
+              activeRewards: validRewards,
+            },
+          })
+        }
+
+        processedCount++
+      } catch (error) {
+        console.error(`Error processing rewards for user ${user.id}:`, error)
+      }
     }
 
-    const processedCount = (result.output as any)?.processedCount || 0
-    const expiredRewardsCount = (result.output as any)?.expiredRewardsCount || 0
+    console.log(`✅ [TASK] Expired rewards cleanup completed: Processed ${processedCount} users, expired ${expiredRewardsCount} rewards`)
 
-    console.log(`[MAINTENANCE] ✅ Expired rewards cleanup completed: ${processedCount} users processed, ${expiredRewardsCount} rewards expired`)
-
-    return { success: true, processedCount, expiredRewardsCount }
+    return {
+      success: true,
+      processedCount,
+      expiredRewardsCount,
+      timestamp,
+      message: `Processed ${processedCount} users, expired ${expiredRewardsCount} rewards`,
+    }
   } catch (error) {
-    console.error('[MAINTENANCE] Error running expired rewards cleanup:', error)
-    return { success: false, processedCount: 0, expiredRewardsCount: 0 }
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('❌ [TASK] Error in expired rewards cleanup:', errorMessage)
+    throw error
   }
 }
 

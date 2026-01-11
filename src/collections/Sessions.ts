@@ -3,7 +3,6 @@ import type { Session, Challenge, Pois, Reward } from '@/payload-types'
 import { RewardService } from '@/services/rewardService'
 
 // Default daily seconds limit (fallback when game config is not available)
-const DEFAULT_DAILY_SECONDS_LIMIT = 60
 
 export const Sessions: CollectionConfig = {
   slug: 'sessions',
@@ -21,13 +20,17 @@ export const Sessions: CollectionConfig = {
         if (data.user && data.poi && data.startTime && data.secondsEarned) {
           try {
             const gameConfig = await req.payload.findGlobal({
-              slug: 'game-config' as any,
+              slug: 'game-config',
             })
 
-            // Use configurable value with fallback to constant
-            const dailySecondsLimit = gameConfig && typeof (gameConfig as any).dailySecondsLimit === 'number'
-              ? (gameConfig as any).dailySecondsLimit
-              : DEFAULT_DAILY_SECONDS_LIMIT // Fallback to 60 seconds
+            type GameConfigType = { dailySecondsLimit?: number }
+            const typedConfig = gameConfig as GameConfigType
+
+            if (typeof typedConfig.dailySecondsLimit !== 'number') {
+              throw new Error('Game config missing required field: dailySecondsLimit')
+            }
+
+            const dailySecondsLimit = typedConfig.dailySecondsLimit
             
             const userId = typeof data.user === 'string' ? data.user : data.user?.id
             const poiId = typeof data.poi === 'string' ? data.poi : data.poi?.id

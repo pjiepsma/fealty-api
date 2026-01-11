@@ -1,42 +1,8 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
-/**
- * Get or create a coin reward for the given difficulty
- * Coin reward gives coins equal to the difficulty level
- */
-async function getOrCreateCoinReward(
-  payload: Awaited<ReturnType<typeof getPayload>>,
-  difficulty: number,
-) {
-  // Try to find existing coin reward for this difficulty
-  const existingRewards = await payload.find({
-    collection: 'rewards',
-    where: {
-      and: [{ difficulty: { equals: difficulty } }, { rewardType: { equals: 'coins' } }],
-    },
-    limit: 1,
-  })
-
-  if (existingRewards.docs.length > 0) {
-    return existingRewards.docs[0]
-  }
-
-  // Create new coin reward for this difficulty
-  const coinReward = await payload.create({
-    collection: 'rewards',
-    data: {
-      rewardType: 'coins',
-      rewardValue: difficulty, // Coins equal to difficulty
-      difficulty: difficulty,
-      description: `${difficulty} coin reward`,
-      isActive: true,
-    },
-  })
-
-  console.log(`[TASK] Created coin reward for difficulty ${difficulty}`)
-  return coinReward
-}
+// Coins are now handled directly in challenge completion based on rewardDifficulty
+// No need to create or assign coin rewards anymore
 
 /**
  * Standalone runner for assign weekly challenges job
@@ -92,11 +58,10 @@ export const runAssignWeeklyChallenges = async () => {
           `[TASK] Generated ${generatedChallenges.length} weekly challenges for user ${user.id}`,
         )
 
+        // Create challenges (coins are given directly based on rewardDifficulty when completed)
         for (const challengeData of generatedChallenges) {
           try {
-            // Get or create coin reward equal to difficulty
-            const coinReward = await getOrCreateCoinReward(payload, challengeData.rewardDifficulty)
-
+            // Create challenge without reward (coins given directly on completion)
             await payload.create({
               collection: 'challenges',
               data: {
@@ -108,11 +73,12 @@ export const runAssignWeeklyChallenges = async () => {
                 targetValue: challengeData.targetValue,
                 targetCategory: challengeData.targetCategory,
                 rewardDifficulty: challengeData.rewardDifficulty,
-                reward: coinReward.id,
+                // No reward assigned - coins given directly on completion
                 progress: 0,
                 expiresAt: challengeData.expiresAt,
                 cost: challengeData.cost,
               },
+              draft: false,
             })
 
             assignedCount++

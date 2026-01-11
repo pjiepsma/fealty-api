@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { PayloadRequest } from 'payload'
 import type { User } from '@/payload-types'
 
@@ -89,3 +90,6 @@ export const expireSeasonRewardsTask = {
 
 
 
+=======
+ 
+>>>>>>> b331cb0b5995a1c81e5d01eca51f795f5c1f445a

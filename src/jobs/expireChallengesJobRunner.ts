@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { PayloadRequest } from 'payload'
 import { expireChallengesTask } from './expireChallengesJob'
 
@@ -24,3 +25,8 @@ export async function runExpireChallenges(req: PayloadRequest): Promise<{ succes
 
 
 
+=======
+// This file is now replaced by the logic in expireChallengesJob.ts
+// The runExpireChallenges function is now directly exported from expireChallengesJob.ts
+export { runExpireChallenges } from './expireChallengesJob'
+>>>>>>> b331cb0b5995a1c81e5d01eca51f795f5c1f445a

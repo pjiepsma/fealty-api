@@ -503,9 +503,9 @@ export interface Challenge {
    */
   cost?: number | null;
   /**
-   * The assigned reward for this challenge
+   * The assigned reward for this challenge (optional - coin challenges give coins directly)
    */
-  reward: string | Reward;
+  reward?: (string | null) | Reward;
   /**
    * Current progress towards the challenge
    */

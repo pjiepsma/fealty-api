@@ -3,7 +3,6 @@ import type { ChallengeType, DifficultyTier, Period } from '../config/challengeR
 import {
   getChallengePreset,
   getGenerationCount,
-  getChallengeCost,
   generateTitle,
   generateDescription,
   getAvailableCategories,
