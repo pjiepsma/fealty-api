@@ -1,9 +1,9 @@
-import type { TaskConfig } from 'payload'
+import type { PayloadRequest } from 'payload'
 import type { Session, User } from '@/payload-types'
 
-export const calculateKingStatusTask: TaskConfig = {
+export const calculateKingStatusTask = {
   slug: 'calculate-king-status',
-  handler: async (args) => {
+  handler: async (args: { req: PayloadRequest }) => {
     const { req } = args
     try {
       // Get all POIs

@@ -73,6 +73,22 @@ export const POIs: CollectionConfig = {
         readOnly: true,
       },
     },
+    {
+      name: 'city',
+      type: 'text',
+      index: true,
+      admin: {
+        description: 'City name where the POI is located',
+      },
+    },
+    {
+      name: 'country',
+      type: 'text',
+      index: true,
+      admin: {
+        description: 'Country name where the POI is located',
+      },
+    },
   ],
   timestamps: true,
 }

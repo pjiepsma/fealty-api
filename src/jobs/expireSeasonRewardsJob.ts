@@ -1,4 +1,4 @@
-import type { TaskConfig } from 'payload'
+import type { PayloadRequest } from 'payload'
 import type { User } from '@/payload-types'
 
 /**
@@ -12,9 +12,9 @@ function getPreviousMonth(): string {
   return `${year}-${month}`
 }
 
-export const expireSeasonRewardsTask: TaskConfig = {
+export const expireSeasonRewardsTask = {
   slug: 'expire-season-rewards',
-  handler: async (args) => {
+  handler: async (args: { req: PayloadRequest }) => {
     const { req } = args
     try {
       // Get the previous month (season that just ended)

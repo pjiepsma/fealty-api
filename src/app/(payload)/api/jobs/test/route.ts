@@ -1,22 +1,30 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
-import { assignDailyChallengesTask, assignWeeklyChallengesTask, assignMonthlyChallengesTask } from '@/jobs/assignChallengesJob'
+import {
+  assignDailyChallengesTask,
+  assignWeeklyChallengesTask,
+  assignMonthlyChallengesTask,
+} from '@/jobs/assignChallengesJob'
 import { expireChallengesTask } from '@/jobs/expireChallengesJob'
 import { dailyDecayTask } from '@/jobs/dailyDecayJob'
-import { pulseTask } from '@/jobs/pulseJob'
 import type { PayloadRequest } from 'payload'
 
 type JobSlug =
-  | 'pulse'
   | 'assign-daily-challenges'
   | 'assign-weekly-challenges'
   | 'assign-monthly-challenges'
   | 'expire-challenges'
   | 'daily-decay'
 
-const jobHandlers: Record<JobSlug, typeof assignDailyChallengesTask> = {
-  'pulse': pulseTask,
+type TaskHandler = {
+  slug: string
+  handler: (args: {
+    req: PayloadRequest
+  }) => Promise<{ output?: unknown; state?: string; errorMessage?: string }>
+}
+
+const jobHandlers: Record<JobSlug, TaskHandler> = {
   'assign-daily-challenges': assignDailyChallengesTask,
   'assign-weekly-challenges': assignWeeklyChallengesTask,
   'assign-monthly-challenges': assignMonthlyChallengesTask,
@@ -40,7 +48,6 @@ export async function POST(request: NextRequest) {
     }
 
     const validJobSlugs: JobSlug[] = [
-      'pulse',
       'assign-daily-challenges',
       'assign-weekly-challenges',
       'assign-monthly-challenges',
@@ -59,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     // Get the task config for this job
     const taskConfig = jobHandlers[jobSlug as JobSlug]
-    
+
     if (!taskConfig) {
       return NextResponse.json(
         {
@@ -88,10 +95,9 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       )
     }
-    
-    const result = await (handler as (args: { req: PayloadRequest; input: unknown }) => Promise<unknown>)({
+
+    const result = await handler({
       req: mockReq,
-      input: {},
     })
 
     return NextResponse.json({
@@ -116,10 +122,6 @@ export async function GET(_request: NextRequest) {
   return NextResponse.json({
     availableJobs: [
       {
-        slug: 'pulse',
-        description: 'Simple pulse job that logs success (runs daily)',
-      },
-      {
         slug: 'assign-daily-challenges',
         description: 'Assign daily challenges to all users',
       },
@@ -142,4 +144,3 @@ export async function GET(_request: NextRequest) {
     ],
   })
 }
-

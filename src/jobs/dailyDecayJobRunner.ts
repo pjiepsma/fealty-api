@@ -23,3 +23,6 @@ export async function runDailyDecay(req: PayloadRequest): Promise<{ success: boo
     return { success: false, processedCount: 0, decayedUsersCount: 0 }
   }
 }
+
+
+

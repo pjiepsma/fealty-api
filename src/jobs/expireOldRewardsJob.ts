@@ -1,9 +1,9 @@
-import type { TaskConfig } from 'payload'
+import type { PayloadRequest } from 'payload'
 import type { User } from '@/payload-types'
 
-export const expireOldRewardsTask: TaskConfig = {
+export const expireOldRewardsTask = {
   slug: 'expire-old-rewards',
-  handler: async (args) => {
+  handler: async (args: { req: PayloadRequest }) => {
     const { req } = args
     try {
       const now = new Date()
@@ -27,32 +27,34 @@ export const expireOldRewardsTask: TaskConfig = {
           const activeRewards = (user.activeRewards || []) as NonNullable<User['activeRewards']>
 
           // Filter out expired or inactive rewards
-          const validRewards = activeRewards.filter((reward: NonNullable<User['activeRewards']>[number]) => {
-            // Remove inactive rewards
-            if (!reward.isActive) {
-              expiredRewardsCount++
-              return false
-            }
-
-            // Remove expired time-based rewards
-            if (reward.activatedAt && reward.duration) {
-              const activatedTime = new Date(reward.activatedAt).getTime()
-              const durationMs = reward.duration * 60 * 60 * 1000
-              const expiresAt = activatedTime + durationMs
-              if (expiresAt < now.getTime()) {
+          const validRewards = activeRewards.filter(
+            (reward: NonNullable<User['activeRewards']>[number]) => {
+              // Remove inactive rewards
+              if (!reward.isActive) {
                 expiredRewardsCount++
                 return false
               }
-            }
 
-            // Remove use-based rewards with no uses remaining
-            if (reward.usesRemaining != null && reward.usesRemaining <= 0) {
-              expiredRewardsCount++
-              return false
-            }
+              // Remove expired time-based rewards
+              if (reward.activatedAt && reward.duration) {
+                const activatedTime = new Date(reward.activatedAt).getTime()
+                const durationMs = reward.duration * 60 * 60 * 1000
+                const expiresAt = activatedTime + durationMs
+                if (expiresAt < now.getTime()) {
+                  expiredRewardsCount++
+                  return false
+                }
+              }
 
-            return true
-          })
+              // Remove use-based rewards with no uses remaining
+              if (reward.usesRemaining != null && reward.usesRemaining <= 0) {
+                expiredRewardsCount++
+                return false
+              }
+
+              return true
+            },
+          )
 
           // Only update if rewards were removed
           if (validRewards.length !== activeRewards.length) {
@@ -72,7 +74,7 @@ export const expireOldRewardsTask: TaskConfig = {
       }
 
       console.log(
-        `Expire old rewards completed: Processed ${processedCount} users, expired ${expiredRewardsCount} rewards`
+        `Expire old rewards completed: Processed ${processedCount} users, expired ${expiredRewardsCount} rewards`,
       )
       return {
         output: {
@@ -91,6 +93,3 @@ export const expireOldRewardsTask: TaskConfig = {
     }
   },
 }
-
-
-

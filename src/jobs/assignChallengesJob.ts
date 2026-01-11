@@ -1,4 +1,4 @@
-import type { TaskConfig, PayloadRequest } from 'payload'
+import type { PayloadRequest } from 'payload'
 import type { Period } from '../config/challengeRules'
 import { generateChallengesForUser } from '../services/challengeGenerator'
 
@@ -234,9 +234,9 @@ async function assignChallengesForPeriod(req: PayloadRequest, period: Period): P
   return { assignedCount, errorCount }
 }
 
-export const assignDailyChallengesTask: TaskConfig = {
+export const assignDailyChallengesTask = {
   slug: 'assign-daily-challenges',
-  handler: async (args) => {
+  handler: async (args: { req: PayloadRequest }) => {
     const { req } = args
     try {
       const { assignedCount, errorCount } = await assignDailyChallenges(req)
@@ -261,9 +261,9 @@ export const assignDailyChallengesTask: TaskConfig = {
   },
 }
 
-export const assignWeeklyChallengesTask: TaskConfig = {
+export const assignWeeklyChallengesTask = {
   slug: 'assign-weekly-challenges',
-  handler: async (args) => {
+  handler: async (args: { req: PayloadRequest }) => {
     const { req } = args
     try {
       const { assignedCount, errorCount } = await assignChallengesForPeriod(req, 'weekly')
@@ -288,9 +288,9 @@ export const assignWeeklyChallengesTask: TaskConfig = {
   },
 }
 
-export const assignMonthlyChallengesTask: TaskConfig = {
+export const assignMonthlyChallengesTask = {
   slug: 'assign-monthly-challenges',
-  handler: async (args) => {
+  handler: async (args: { req: PayloadRequest }) => {
     const { req } = args
     try {
       const { assignedCount, errorCount } = await assignChallengesForPeriod(req, 'monthly')

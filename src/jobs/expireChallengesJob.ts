@@ -1,8 +1,8 @@
-import type { TaskConfig } from 'payload'
+import type { PayloadRequest } from 'payload'
 
-export const expireChallengesTask: TaskConfig = {
+export const expireChallengesTask = {
   slug: 'expire-challenges',
-  handler: async (args) => {
+  handler: async (args: { req: PayloadRequest }) => {
     const { req } = args
     try {
       const now = new Date().toISOString()

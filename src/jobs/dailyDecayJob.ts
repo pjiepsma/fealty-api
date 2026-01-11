@@ -1,9 +1,9 @@
-import type { TaskConfig } from 'payload'
+import type { PayloadRequest } from 'payload'
 import type { User } from '@/payload-types'
 
-export const dailyDecayTask: TaskConfig = {
+export const dailyDecayTask = {
   slug: 'daily-decay',
-  handler: async (args) => {
+  handler: async (args: { req: PayloadRequest }) => {
     const { req } = args
     try {
       // Get game config for decay settings

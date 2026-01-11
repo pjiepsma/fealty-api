@@ -190,10 +190,17 @@ interface FetchPOIsRequestBody {
   radius?: number
 }
 
+/**
+ * Public endpoint for fetching POIs from Overpass API
+ * Allows users to browse the map and see POIs without authentication
+ * This enables the "browse without login" feature
+ */
 export async function POST(request: NextRequest) {
+  console.log('[fetch-from-overpass] POST request received - Public endpoint, no auth required')
   try {
     const body = (await request.json()) as FetchPOIsRequestBody
     const { lat, lng, radius = 10000 } = body
+    console.log('[fetch-from-overpass] Request params:', { lat, lng, radius })
 
     if (!lat || !lng) {
       return NextResponse.json(
@@ -226,6 +233,7 @@ export async function POST(request: NextRequest) {
       try {
         const result = await fetchWithRetry(endpoint, query, 3)
         if (result.length > 0) {
+          console.log('[fetch-from-overpass] Successfully fetched', result.length, 'POIs from Overpass')
           return NextResponse.json({
             success: true,
             pois: result,
@@ -233,11 +241,12 @@ export async function POST(request: NextRequest) {
           })
         }
       } catch (_error) {
-        console.warn(`Failed to fetch from ${endpoint}, trying next...`)
+        console.warn(`[fetch-from-overpass] Failed to fetch from ${endpoint}, trying next...`)
         continue
       }
     }
 
+    console.warn('[fetch-from-overpass] All Overpass API endpoints failed')
     return NextResponse.json({
       success: false,
       error: 'All Overpass API endpoints failed',
@@ -245,7 +254,7 @@ export async function POST(request: NextRequest) {
       count: 0,
     })
   } catch (error) {
-    console.error('Error in fetch-from-overpass endpoint:', error)
+    console.error('[fetch-from-overpass] Error in endpoint:', error)
     return NextResponse.json(
       {
         error: 'Failed to fetch POIs from Overpass',
