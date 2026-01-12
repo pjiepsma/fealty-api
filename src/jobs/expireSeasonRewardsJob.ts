@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import type { PayloadRequest } from 'payload'
 import type { User } from '@/payload-types'
 
@@ -37,17 +36,19 @@ export const expireSeasonRewardsTask = {
 
       for (const user of users.docs) {
         try {
-          const activeRewards = (user.activeRewards || []) as NonNullable<User['activeRewards']>
+          const activeRewards = user.activeRewards ?? []
 
           // Filter out season-based rewards for the expired season
-          const validRewards = activeRewards.filter((reward: NonNullable<User['activeRewards']>[number]) => {
-            // Remove season-based rewards (like bonus_crowns) for the expired season
-            if (reward.season === expiredSeason && reward.rewardType === 'bonus_crowns') {
-              expiredRewardsCount++
-              return false
-            }
-            return true
-          })
+          const validRewards = activeRewards.filter(
+            (reward: NonNullable<User['activeRewards']>[number]) => {
+              // Remove season-based rewards (like bonus_crowns) for the expired season
+              if (reward.season === expiredSeason && reward.rewardType === 'bonus_crowns') {
+                expiredRewardsCount++
+                return false
+              }
+              return true
+            },
+          )
 
           // Only update if rewards were removed
           if (validRewards.length !== activeRewards.length) {
@@ -67,7 +68,7 @@ export const expireSeasonRewardsTask = {
       }
 
       console.log(
-        `Expire season rewards completed: Processed ${processedCount} users, expired ${expiredRewardsCount} rewards for season ${expiredSeason}`
+        `Expire season rewards completed: Processed ${processedCount} users, expired ${expiredRewardsCount} rewards for season ${expiredSeason}`,
       )
       return {
         output: {
@@ -77,19 +78,13 @@ export const expireSeasonRewardsTask = {
           expiredSeason,
         },
       }
-    } catch (error: unknown) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       console.error('Error in expireSeasonRewardsTask:', errorMessage)
       return {
-        state: 'failed' as const,
+        state: 'failed',
         errorMessage,
       }
     }
   },
 }
-
-
-
-=======
- 
->>>>>>> b331cb0b5995a1c81e5d01eca51f795f5c1f445a

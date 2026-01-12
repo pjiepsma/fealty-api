@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import type { PayloadRequest } from 'payload'
 import type { Period } from '../config/challengeRules'
 import { generateChallengesForUser } from '../services/challengeGenerator'
@@ -6,7 +5,9 @@ import { generateChallengesForUser } from '../services/challengeGenerator'
 /**
  * Assign daily challenges (personal challenges for each user)
  */
-async function assignDailyChallenges(req: PayloadRequest): Promise<{ assignedCount: number; errorCount: number }> {
+async function assignDailyChallenges(
+  req: PayloadRequest,
+): Promise<{ assignedCount: number; errorCount: number }> {
   // Get all active users
   const users = await req.payload.find({
     collection: 'users',
@@ -45,7 +46,9 @@ async function assignDailyChallenges(req: PayloadRequest): Promise<{ assignedCou
 
       // Skip if user already has active daily challenges
       if (existingChallenges.docs.length > 0) {
-        console.log(`User ${user.id} already has ${existingChallenges.docs.length} active daily challenges, skipping`)
+        console.log(
+          `User ${user.id} already has ${existingChallenges.docs.length} active daily challenges, skipping`,
+        )
         continue
       }
 
@@ -77,7 +80,7 @@ async function assignDailyChallenges(req: PayloadRequest): Promise<{ assignedCou
 
           if (rewards.docs.length === 0) {
             console.warn(
-              `No active rewards found for difficulty ${challengeData.rewardDifficulty}, skipping challenge`
+              `No active rewards found for difficulty ${challengeData.rewardDifficulty}, skipping challenge`,
             )
             continue
           }
@@ -122,7 +125,10 @@ async function assignDailyChallenges(req: PayloadRequest): Promise<{ assignedCou
 /**
  * Assign challenges for weekly/monthly periods (generated uniquely per user)
  */
-async function assignChallengesForPeriod(req: PayloadRequest, period: Period): Promise<{ assignedCount: number; errorCount: number }> {
+async function assignChallengesForPeriod(
+  req: PayloadRequest,
+  period: Period,
+): Promise<{ assignedCount: number; errorCount: number }> {
   // Get all active users
   const users = await req.payload.find({
     collection: 'users',
@@ -161,7 +167,9 @@ async function assignChallengesForPeriod(req: PayloadRequest, period: Period): P
 
       // Skip if user already has active challenges for this period
       if (existingChallenges.docs.length > 0) {
-        console.log(`User ${user.id} already has ${existingChallenges.docs.length} active ${period} challenges, skipping`)
+        console.log(
+          `User ${user.id} already has ${existingChallenges.docs.length} active ${period} challenges, skipping`,
+        )
         continue
       }
 
@@ -193,7 +201,7 @@ async function assignChallengesForPeriod(req: PayloadRequest, period: Period): P
 
           if (rewards.docs.length === 0) {
             console.warn(
-              `No active rewards found for difficulty ${challengeData.rewardDifficulty}, skipping challenge`
+              `No active rewards found for difficulty ${challengeData.rewardDifficulty}, skipping challenge`,
             )
             continue
           }
@@ -242,7 +250,7 @@ export const assignDailyChallengesTask = {
     try {
       const { assignedCount, errorCount } = await assignDailyChallenges(req)
       console.log(
-        `Daily challenges assignment completed: Assigned ${assignedCount} challenges, ${errorCount} errors`
+        `Daily challenges assignment completed: Assigned ${assignedCount} challenges, ${errorCount} errors`,
       )
       return {
         output: {
@@ -251,11 +259,11 @@ export const assignDailyChallengesTask = {
           errorCount,
         },
       }
-    } catch (error: unknown) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       console.error('Error in assignDailyChallenges:', errorMessage)
       return {
-        state: 'failed' as const,
+        state: 'failed',
         errorMessage,
       }
     }
@@ -269,7 +277,7 @@ export const assignWeeklyChallengesTask = {
     try {
       const { assignedCount, errorCount } = await assignChallengesForPeriod(req, 'weekly')
       console.log(
-        `Weekly challenges assignment completed: Assigned ${assignedCount} challenges, ${errorCount} errors`
+        `Weekly challenges assignment completed: Assigned ${assignedCount} challenges, ${errorCount} errors`,
       )
       return {
         output: {
@@ -278,11 +286,11 @@ export const assignWeeklyChallengesTask = {
           errorCount,
         },
       }
-    } catch (error: unknown) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       console.error('Error in assignWeeklyChallenges:', errorMessage)
       return {
-        state: 'failed' as const,
+        state: 'failed',
         errorMessage,
       }
     }
@@ -296,7 +304,7 @@ export const assignMonthlyChallengesTask = {
     try {
       const { assignedCount, errorCount } = await assignChallengesForPeriod(req, 'monthly')
       console.log(
-        `Monthly challenges assignment completed: Assigned ${assignedCount} challenges, ${errorCount} errors`
+        `Monthly challenges assignment completed: Assigned ${assignedCount} challenges, ${errorCount} errors`,
       )
       return {
         output: {
@@ -305,16 +313,13 @@ export const assignMonthlyChallengesTask = {
           errorCount,
         },
       }
-    } catch (error: unknown) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       console.error('Error in assignMonthlyChallenges:', errorMessage)
       return {
-        state: 'failed' as const,
+        state: 'failed',
         errorMessage,
       }
     }
   },
 }
-=======
- 
->>>>>>> b331cb0b5995a1c81e5d01eca51f795f5c1f445a

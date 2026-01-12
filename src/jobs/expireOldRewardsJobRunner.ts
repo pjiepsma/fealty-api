@@ -26,7 +26,7 @@ export async function runExpireOldRewards(): Promise<{ success: boolean; process
 
     for (const user of users.docs) {
       try {
-        const activeRewards = (user.activeRewards || []) as NonNullable<User['activeRewards']>
+        const activeRewards = user.activeRewards ?? []
 
         // Filter out expired or inactive rewards
         const validRewards = activeRewards.filter((reward: NonNullable<User['activeRewards']>[number]) => {

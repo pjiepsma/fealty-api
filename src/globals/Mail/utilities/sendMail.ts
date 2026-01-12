@@ -1,4 +1,4 @@
-import type { Mail } from '@/payload-types'
+import type { Mail, MailSelect } from '@/payload-types'
 import type { PayloadRequest } from 'payload'
 import { slateToHtml, payloadSlateToHtmlConfig } from '@slate-serializers/html'
 import { buildHtmlEmailTemplate } from './htmlEmailTemplate'
@@ -21,7 +21,10 @@ type SendMailArgs = GenerateMailArgs & {
   bcc?: string[]
 }
 
-function getMailTemplate(mail: Mail, type: MailTemplateType): Mail['verify'] | Mail['forgotPassword'] | undefined {
+function getMailTemplate(
+  mail: Mail,
+  type: MailTemplateType,
+): Mail['verify'] | Mail['forgotPassword'] | undefined {
   switch (type) {
     case 'verify':
       return mail.verify
@@ -38,16 +41,19 @@ function isSlateFormat(content: unknown): content is unknown[] {
   return Array.isArray(content)
 }
 
+function isObjectWithProperty<T extends string>(obj: unknown, prop: T): obj is Record<T, unknown> {
+  return typeof obj === 'object' && obj !== null && prop in obj
+}
+
 function isLexicalFormat(content: unknown): content is { root: { children: unknown[] } } {
-  return (
-    typeof content === 'object' &&
-    content !== null &&
-    'root' in content &&
-    typeof (content as { root?: unknown }).root === 'object' &&
-    (content as { root?: { children?: unknown } }).root !== null &&
-    'children' in (content as { root: { children?: unknown } }).root &&
-    Array.isArray((content as { root: { children: unknown[] } }).root.children)
-  )
+  if (!isObjectWithProperty(content, 'root')) {
+    return false
+  }
+  const root = content.root
+  if (!isObjectWithProperty(root, 'children')) {
+    return false
+  }
+  return Array.isArray(root.children)
 }
 
 function convertLexicalToSlate(lexicalContent: { root: { children: unknown[] } }): unknown[] {
@@ -68,18 +74,18 @@ export const generateMail = async ({
   req,
 }: GenerateMailArgs): Promise<GenerateMail> => {
   // Build select object dynamically based on type
-  const selectFields =
+  const selectFields: MailSelect<true> =
     type === 'verify'
       ? {
           verify: {
-            subject: true as const,
-            content: true as const,
+            subject: true,
+            content: true,
           },
         }
       : {
           forgotPassword: {
-            subject: true as const,
-            content: true as const,
+            subject: true,
+            content: true,
           },
         }
 
@@ -94,11 +100,7 @@ export const generateMail = async ({
 
   // Type guard to ensure we have the Mail structure
   function isMail(obj: unknown): obj is Mail {
-    return (
-      typeof obj === 'object' &&
-      obj !== null &&
-      'fromEmail' in obj
-    )
+    return typeof obj === 'object' && obj !== null && 'fromEmail' in obj
   }
 
   if (!isMail(mailGlobal)) {
@@ -113,7 +115,7 @@ export const generateMail = async ({
   }
 
   const subject = replacePlaceholders(mailTemplate.subject || '', placeholders)
-  
+
   let content = ''
   if (mailTemplate.content) {
     let contentForHtml: unknown[]
@@ -122,7 +124,9 @@ export const generateMail = async ({
     } else if (isLexicalFormat(mailTemplate.content)) {
       contentForHtml = convertLexicalToSlate(mailTemplate.content)
     } else {
-      throw new Error(`Unsupported content format for mail template "${type}". Expected Slate or Lexical format.`)
+      throw new Error(
+        `Unsupported content format for mail template "${type}". Expected Slate or Lexical format.`,
+      )
     }
     content = buildHtmlBody(contentForHtml, placeholders)
   }
@@ -176,24 +180,18 @@ export const sendMail = async ({
   }
 }
 
-const buildHtmlBody = (
-  content: unknown[],
-  placeholders: Record<string, string>,
-): string => {
+const buildHtmlBody = (content: unknown[], placeholders: Record<string, string>): string => {
   if (!content || content.length === 0) return ''
-  
+
   const html = slateToHtml(content, {
     ...payloadSlateToHtmlConfig,
     convertLineBreakToBr: true,
   })
-  
+
   return replacePlaceholders(html, placeholders)
 }
 
-const replacePlaceholders = (
-  content: string,
-  placeholders: Record<string, string>,
-): string => {
+const replacePlaceholders = (content: string, placeholders: Record<string, string>): string => {
   return Object.entries(placeholders).reduce((acc, [key, value]) => {
     return acc.replace(new RegExp(`{{${key}}}`, 'g'), value)
   }, content)

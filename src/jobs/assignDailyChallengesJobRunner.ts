@@ -63,14 +63,8 @@ export const runAssignDailyChallenges = async () => {
         }
 
         // Generate challenges for user
-        const { generateChallengesForUser } = await import('../services/challengeGenerator')
-        const generatedChallenges = await generateChallengesForUser(
-          { payload } as Awaited<ReturnType<typeof getPayload>> extends { payload: infer P }
-            ? { payload: P }
-            : never,
-          user.id,
-          'daily',
-        )
+        const { generateChallengesForUserInternal } = await import('../services/challengeGenerator')
+        const generatedChallenges = await generateChallengesForUserInternal(payload, user.id, 'daily')
 
         console.log(`[TASK] Generated ${generatedChallenges.length} challenges for user ${user.id}`)
 

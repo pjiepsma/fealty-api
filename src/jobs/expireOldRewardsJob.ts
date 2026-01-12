@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import type { PayloadRequest } from 'payload'
 import type { User } from '@/payload-types'
 
@@ -25,7 +24,7 @@ export const expireOldRewardsTask = {
 
       for (const user of users.docs) {
         try {
-          const activeRewards = (user.activeRewards || []) as NonNullable<User['activeRewards']>
+          const activeRewards = user.activeRewards ?? []
 
           // Filter out expired or inactive rewards
           const validRewards = activeRewards.filter(
@@ -84,16 +83,13 @@ export const expireOldRewardsTask = {
           expiredRewardsCount,
         },
       }
-    } catch (error: unknown) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       console.error('Error in expireOldRewardsTask:', errorMessage)
       return {
-        state: 'failed' as const,
+        state: 'failed',
         errorMessage,
       }
     }
   },
 }
-=======
- 
->>>>>>> b331cb0b5995a1c81e5d01eca51f795f5c1f445a

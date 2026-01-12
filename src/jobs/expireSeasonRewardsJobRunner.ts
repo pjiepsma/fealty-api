@@ -34,7 +34,7 @@ export async function runExpireSeasonRewards(): Promise<{ success: boolean; proc
 
     for (const user of users.docs) {
       try {
-        const activeRewards = (user.activeRewards || []) as NonNullable<User['activeRewards']>
+        const activeRewards = user.activeRewards ?? []
 
         // Filter out season-based rewards for the expired season
         const validRewards = activeRewards.filter((reward: NonNullable<User['activeRewards']>[number]) => {

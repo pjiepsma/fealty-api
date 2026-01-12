@@ -14,18 +14,19 @@ export const runDailyDecay = async () => {
       slug: 'game-config',
     })
 
-    type GameConfigType = { defaultDecayPercentage?: number; maxDecayReduction?: number }
-    const typedConfig = gameConfig as GameConfigType
+    if (!gameConfig) {
+      throw new Error('Game config not found')
+    }
 
-    if (typeof typedConfig.defaultDecayPercentage !== 'number') {
+    if (typeof gameConfig.defaultDecayPercentage !== 'number') {
       throw new Error('Game config missing required field: defaultDecayPercentage')
     }
-    if (typeof typedConfig.maxDecayReduction !== 'number') {
+    if (typeof gameConfig.maxDecayReduction !== 'number') {
       throw new Error('Game config missing required field: maxDecayReduction')
     }
 
-    const defaultDecayPercentage = typedConfig.defaultDecayPercentage
-    const maxDecayReduction = typedConfig.maxDecayReduction
+    const defaultDecayPercentage = gameConfig.defaultDecayPercentage
+    const maxDecayReduction = gameConfig.maxDecayReduction
 
     const minimumDecayPercentage = Math.max(0, defaultDecayPercentage - maxDecayReduction)
 
@@ -68,18 +69,21 @@ export const runDailyDecay = async () => {
 
             // If no duration/activation time, consider it active (unlimited)
             return true
-          }
+          },
         )
 
         // Calculate total decay reduction from active rewards
-        const totalDecayReduction = activeRewards.reduce((sum: number, reward: NonNullable<User['activeRewards']>[number]) => {
-          return sum + (reward.rewardValue || 0)
-        }, 0)
+        const totalDecayReduction = activeRewards.reduce(
+          (sum: number, reward: NonNullable<User['activeRewards']>[number]) => {
+            return sum + reward.rewardValue
+          },
+          0,
+        )
 
         // Calculate user's decay percentage (default - reduction, minimum configurable)
         const userDecayPercentage = Math.max(
           minimumDecayPercentage,
-          defaultDecayPercentage - totalDecayReduction
+          defaultDecayPercentage - totalDecayReduction,
         )
 
         // Apply decay
@@ -98,7 +102,7 @@ export const runDailyDecay = async () => {
 
           decayedUsersCount++
           console.log(
-            `Daily decay for user ${user.id}: ${totalSeconds} → ${newTotalSeconds} (${userDecayPercentage.toFixed(1)}% decay)`
+            `Daily decay for user ${user.id}: ${totalSeconds} → ${newTotalSeconds} (${userDecayPercentage.toFixed(1)}% decay)`,
           )
         }
 
@@ -108,7 +112,9 @@ export const runDailyDecay = async () => {
       }
     }
 
-    console.log(`✅ [TASK] Daily decay completed: Processed ${processedCount} users, applied decay to ${decayedUsersCount} users`)
+    console.log(
+      `✅ [TASK] Daily decay completed: Processed ${processedCount} users, applied decay to ${decayedUsersCount} users`,
+    )
 
     return {
       success: true,
@@ -123,6 +129,3 @@ export const runDailyDecay = async () => {
     throw error
   }
 }
-
-
-

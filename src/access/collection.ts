@@ -21,16 +21,23 @@ const accessFn =
   (args: FnArgs | undefined): Access =>
   (accessArgs: AccessArgs): AccessResult | Promise<AccessResult> => {
     if (!accessArgs.req?.user?.role) return args?.guest?.(accessArgs) || false
-    if (args?.[accessArgs.req.user.role as AccessCollectionRoles] === undefined && accessArgs.req.user.role === 'admin')
+    const userRole = accessArgs.req.user.role
+    if (userRole === 'admin' && args?.[userRole] === undefined) {
       return true
-    return args?.[accessArgs.req.user.role as AccessCollectionRoles]?.(accessArgs) || false
+    }
+    const roleHandler = userRole === 'user' || userRole === 'admin' ? args?.[userRole] : undefined
+    return roleHandler?.(accessArgs) || false
   }
 
 const adminAccessFn = (args: AdminFnArgs | undefined): (({ req }: { req: PayloadRequest }) => boolean | Promise<boolean>) => {
   return ({ req }): boolean | Promise<boolean> => {
     if (!req?.user?.role) return false
-    if (args?.[req.user.role as AccessCollectionRoles] === undefined && req.user.role === 'admin') return true
-    return args?.[req.user.role as AccessCollectionRoles] || false
+    const userRole = req.user.role
+    if (userRole === 'admin' && args?.[userRole] === undefined) {
+      return true
+    }
+    const roleAccess = userRole === 'user' || userRole === 'admin' ? args?.[userRole] : undefined
+    return roleAccess || false
   }
 }
 

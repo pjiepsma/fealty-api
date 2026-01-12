@@ -1,15 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
-interface PushNotificationData {
-  [key: string]: string | number | boolean | null | undefined
-}
+type PushNotificationData = Record<string, string>
 
-interface PushToken {
-  expoPushToken: string
-  isActive?: boolean
-  platform?: 'ios' | 'android'
-  id?: string
-}
 
 /**
  * Send push notification to a user via Expo Push Notification API
@@ -33,7 +25,8 @@ export async function sendPushNotification(
     }
 
     // Get active push tokens
-    const pushTokens = ((user.pushTokens || []) as PushToken[]).filter(
+    const userPushTokens = user.pushTokens || []
+    const pushTokens = userPushTokens.filter(
       (token) => token.isActive && token.expoPushToken
     )
 

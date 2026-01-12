@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import type { PayloadRequest } from 'payload'
 import type { User } from '@/payload-types'
 
@@ -9,16 +8,23 @@ export const dailyDecayTask = {
     try {
       // Get game config for decay settings
       const gameConfig = await req.payload.findGlobal({
-        slug: 'game-config' as any,
+        slug: 'game-config',
       })
 
-      const defaultDecayPercentage = gameConfig && typeof (gameConfig as any).defaultDecayPercentage === 'number'
-        ? (gameConfig as any).defaultDecayPercentage
-        : 5.0 // Fallback
+      if (!gameConfig) {
+        throw new Error('Game config not found')
+      }
 
-      const maxDecayReduction = gameConfig && typeof (gameConfig as any).maxDecayReduction === 'number'
-        ? (gameConfig as any).maxDecayReduction
-        : 3.0 // Fallback
+      if (typeof gameConfig.defaultDecayPercentage !== 'number') {
+        throw new Error('Game config missing required field: defaultDecayPercentage')
+      }
+
+      if (typeof gameConfig.maxDecayReduction !== 'number') {
+        throw new Error('Game config missing required field: maxDecayReduction')
+      }
+
+      const defaultDecayPercentage = gameConfig.defaultDecayPercentage
+      const maxDecayReduction = gameConfig.maxDecayReduction
 
       const minimumDecayPercentage = Math.max(0, defaultDecayPercentage - maxDecayReduction)
 
@@ -38,11 +44,15 @@ export const dailyDecayTask = {
 
       for (const user of users.docs) {
         try {
-          const totalSeconds = user.totalSeconds || 0
-
-          if (totalSeconds <= 0) {
+          if (
+            user.totalSeconds === null ||
+            user.totalSeconds === undefined ||
+            user.totalSeconds <= 0
+          ) {
             continue
           }
+
+          const totalSeconds = user.totalSeconds
 
           // Get user's active decay_reduction rewards
           const activeRewards = (user.activeRewards || []).filter(
@@ -61,18 +71,21 @@ export const dailyDecayTask = {
 
               // If no duration/activation time, consider it active (unlimited)
               return true
-            }
+            },
           )
 
           // Calculate total decay reduction from active rewards
-          const totalDecayReduction = activeRewards.reduce((sum: number, reward: NonNullable<User['activeRewards']>[number]) => {
-            return sum + (reward.rewardValue || 0)
-          }, 0)
+          const totalDecayReduction = activeRewards.reduce(
+            (sum: number, reward: NonNullable<User['activeRewards']>[number]) => {
+              return sum + reward.rewardValue
+            },
+            0,
+          )
 
           // Calculate user's decay percentage (default - reduction, minimum configurable)
           const userDecayPercentage = Math.max(
             minimumDecayPercentage,
-            defaultDecayPercentage - totalDecayReduction
+            defaultDecayPercentage - totalDecayReduction,
           )
 
           // Apply decay
@@ -91,7 +104,7 @@ export const dailyDecayTask = {
 
             decayedUsersCount++
             console.log(
-              `Daily decay for user ${user.id}: ${totalSeconds} → ${newTotalSeconds} (${userDecayPercentage.toFixed(1)}% decay)`
+              `Daily decay for user ${user.id}: ${totalSeconds} → ${newTotalSeconds} (${userDecayPercentage.toFixed(1)}% decay)`,
             )
           }
 
@@ -102,7 +115,7 @@ export const dailyDecayTask = {
       }
 
       console.log(
-        `Daily decay completed: Processed ${processedCount} users, applied decay to ${decayedUsersCount} users`
+        `Daily decay completed: Processed ${processedCount} users, applied decay to ${decayedUsersCount} users`,
       )
       return {
         output: {
@@ -111,16 +124,13 @@ export const dailyDecayTask = {
           decayedUsersCount,
         },
       }
-    } catch (error: unknown) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       console.error('Error in dailyDecayJob:', errorMessage)
       return {
-        state: 'failed' as const,
+        state: 'failed',
         errorMessage,
       }
     }
   },
 }
-=======
- 
->>>>>>> b331cb0b5995a1c81e5d01eca51f795f5c1f445a

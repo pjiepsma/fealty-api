@@ -47,21 +47,36 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const data = await response.json() as NominatimResult[]
-
-    const cities = data
-      .filter((item: NominatimResult) => 
-        item.type === 'city' || 
-        item.type === 'town' || 
-        item.type === 'village' ||
-        item.type === 'municipality'
+    const jsonData = await response.json()
+    if (!Array.isArray(jsonData)) {
+      return NextResponse.json(
+        {
+          error: 'Invalid response from geocoding service',
+        },
+        { status: 500 }
       )
-      .map((item: NominatimResult) => ({
-        name: item.name || item.display_name.split(',')[0],
-        country: item.address?.country || '',
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon),
-      }))
+    }
+
+    const cities = jsonData
+      .filter((item): item is NominatimResult => {
+        if (typeof item !== 'object' || item === null) return false
+        if (!('type' in item) || typeof item.type !== 'string') return false
+        if (!('display_name' in item) || typeof item.display_name !== 'string') return false
+        if (!('lat' in item) || typeof item.lat !== 'string') return false
+        if (!('lon' in item) || typeof item.lon !== 'string') return false
+        return item.type === 'city' || 
+          item.type === 'town' || 
+          item.type === 'village' ||
+          item.type === 'municipality'
+      })
+      .map((item) => {
+        return {
+          name: item.name || item.display_name.split(',')[0],
+          country: item.address?.country || '',
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+        }
+      })
 
     return NextResponse.json({
       cities,

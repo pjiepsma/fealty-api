@@ -1,10 +1,54 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
-import type { Challenge, Reward } from '@/payload-types'
-import { generateTitle, generateDescription, getAvailableCategories } from '@/config/challengeRules'
+import type { Challenge, Reward, ChallengeConfig } from '@/payload-types'
+import { generateTitle, generateDescription } from '@/config/challengeRules'
 import type { ChallengeType } from '@/config/challengeRules'
-import type { Payload, PayloadRequest } from 'payload'
+import type { Payload } from 'payload'
+
+type PresetGroup = {
+  easy?: number
+  medium?: number
+  hard?: number
+}
+
+function hasProperty<K extends string>(
+  obj: unknown,
+  prop: K,
+): obj is Record<K, unknown> & Record<string, unknown> {
+  return typeof obj === 'object' && obj !== null && prop in obj
+}
+
+function isPresetGroup(obj: unknown): obj is PresetGroup {
+  if (typeof obj !== 'object' || obj === null) {
+    return false
+  }
+  if (!hasProperty(obj, 'easy') && !hasProperty(obj, 'medium') && !hasProperty(obj, 'hard')) {
+    return false
+  }
+  const easy = hasProperty(obj, 'easy') ? obj.easy : undefined
+  const medium = hasProperty(obj, 'medium') ? obj.medium : undefined
+  const hard = hasProperty(obj, 'hard') ? obj.hard : undefined
+  return (
+    (easy === undefined || typeof easy === 'number') &&
+    (medium === undefined || typeof medium === 'number') &&
+    (hard === undefined || typeof hard === 'number')
+  )
+}
+
+function getConfigField(
+  config: ChallengeConfig,
+  fieldName: string,
+): { easy?: number; medium?: number; hard?: number } | undefined {
+  if (!hasProperty(config, fieldName)) {
+    return undefined
+  }
+  const value = config[fieldName]
+  if (!isPresetGroup(value)) {
+    return undefined
+  }
+  return value
+}
 
 // Helper function to get random targetValue between min and max presets
 async function getRandomTargetValue(
@@ -26,10 +70,8 @@ async function getRandomTargetValue(
       .split('_')
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join('')
-    const fieldName = `${period}${camelCaseType}` as keyof typeof config
-    const presetGroup = config[fieldName] as
-      | { easy?: number; medium?: number; hard?: number }
-      | undefined
+    const fieldName = `${period}${camelCaseType}`
+    const presetGroup = getConfigField(config, fieldName)
 
     if (!presetGroup) {
       return null
@@ -174,7 +216,7 @@ export async function POST(request: NextRequest) {
 
       const challengeTemplate = {
         type: 'daily' as const,
-        challengeType: challengeType as ChallengeType,
+        challengeType,
       }
 
       usedDailyTypes.push(challengeType)
@@ -215,11 +257,19 @@ export async function POST(request: NextRequest) {
         challengeTemplate.challengeType === 'category_similarity' ||
         challengeTemplate.challengeType === 'entry_count'
       ) {
-        const categories = await getAvailableCategories({ payload } as PayloadRequest)
-        if (categories.length > 0) {
-          const randomCategory = categories[Math.floor(Math.random() * categories.length)]
-          targetCategory = randomCategory.category
-          categoryAdjustment = randomCategory.difficultyAdjustment || 0
+        const config = await payload.findGlobal({
+          slug: 'challenge-config',
+        })
+        if (config && config.availableCategories) {
+          const categories = config.availableCategories.map((cat) => ({
+            category: cat.category,
+            difficultyAdjustment: cat.difficultyAdjustment ?? 0,
+          }))
+          if (categories.length > 0) {
+            const randomCategory = categories[Math.floor(Math.random() * categories.length)]
+            targetCategory = randomCategory.category
+            categoryAdjustment = randomCategory.difficultyAdjustment
+          }
         }
       }
 
@@ -310,7 +360,7 @@ export async function POST(request: NextRequest) {
 
       const challengeTemplate = {
         type: 'weekly' as const,
-        challengeType: challengeType as ChallengeType,
+        challengeType,
       }
 
       usedWeeklyTypes.push(challengeType)
@@ -343,11 +393,19 @@ export async function POST(request: NextRequest) {
         challengeTemplate.challengeType === 'category_similarity' ||
         challengeTemplate.challengeType === 'entry_count'
       ) {
-        const categories = await getAvailableCategories({ payload } as PayloadRequest)
-        if (categories.length > 0) {
-          const randomCategory = categories[Math.floor(Math.random() * categories.length)]
-          targetCategory = randomCategory.category
-          categoryAdjustment = randomCategory.difficultyAdjustment || 0
+        const config = await payload.findGlobal({
+          slug: 'challenge-config',
+        })
+        if (config && config.availableCategories) {
+          const categories = config.availableCategories.map((cat) => ({
+            category: cat.category,
+            difficultyAdjustment: cat.difficultyAdjustment ?? 0,
+          }))
+          if (categories.length > 0) {
+            const randomCategory = categories[Math.floor(Math.random() * categories.length)]
+            targetCategory = randomCategory.category
+            categoryAdjustment = randomCategory.difficultyAdjustment
+          }
         }
       }
 

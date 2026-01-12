@@ -1,4 +1,5 @@
-import type { PayloadRequest } from 'payload'
+import type { PayloadRequest, Payload } from 'payload'
+import type { ChallengeConfig } from '@/payload-types'
 
 export type ChallengeType = 'entry_count' | 'crown_claim' | 'session_duration' | 'longest_session' | 'unique_pois' | 'category_variety' | 'category_similarity' | 'new_location'
 export type Period = 'daily' | 'weekly' | 'monthly'
@@ -9,17 +10,58 @@ export interface ChallengePreset {
   tier: DifficultyTier
 }
 
-/**
- * Get challenge preset (target value) for a given challenge type, period, and difficulty tier
- */
-export async function getChallengePreset(
-  req: PayloadRequest,
+type PresetGroup = {
+  easy?: number
+  medium?: number
+  hard?: number
+}
+
+function hasProperty<K extends string>(
+  obj: unknown,
+  prop: K,
+): obj is Record<K, unknown> & Record<string, unknown> {
+  return typeof obj === 'object' && obj !== null && prop in obj
+}
+
+function isPresetGroup(obj: unknown): obj is PresetGroup {
+  if (typeof obj !== 'object' || obj === null) {
+    return false
+  }
+  if (!hasProperty(obj, 'easy') && !hasProperty(obj, 'medium') && !hasProperty(obj, 'hard')) {
+    return false
+  }
+  const easy = hasProperty(obj, 'easy') ? obj.easy : undefined
+  const medium = hasProperty(obj, 'medium') ? obj.medium : undefined
+  const hard = hasProperty(obj, 'hard') ? obj.hard : undefined
+  return (
+    (easy === undefined || typeof easy === 'number') &&
+    (medium === undefined || typeof medium === 'number') &&
+    (hard === undefined || typeof hard === 'number')
+  )
+}
+
+function getConfigField(
+  config: ChallengeConfig,
+  fieldName: string,
+): { easy?: number; medium?: number; hard?: number } | undefined {
+  if (!hasProperty(config, fieldName)) {
+    return undefined
+  }
+  const value = config[fieldName]
+  if (!isPresetGroup(value)) {
+    return undefined
+  }
+  return value
+}
+
+export async function getChallengePresetWithPayload(
+  payload: Payload,
   challengeType: ChallengeType,
   period: Period,
   tier: DifficultyTier
 ): Promise<number | null> {
   try {
-    const config = await req.payload.findGlobal({
+    const config = await payload.findGlobal({
       slug: 'challenge-config',
     })
 
@@ -34,9 +76,9 @@ export async function getChallengePreset(
       .split('_')
       .map((word) => capitalizeFirst(word))
       .join('')
-    const fieldName = `${period}${camelCaseType}` as keyof typeof config
+    const fieldName = `${period}${camelCaseType}`
 
-    const presetGroup = config[fieldName] as { easy?: number; medium?: number; hard?: number } | undefined
+    const presetGroup = getConfigField(config, fieldName)
 
     if (!presetGroup) {
       console.error(`No preset found for ${fieldName}`)
@@ -49,6 +91,18 @@ export async function getChallengePreset(
     console.error('Error getting challenge preset:', error)
     return null
   }
+}
+
+/**
+ * Get challenge preset (target value) for a given challenge type, period, and difficulty tier
+ */
+export async function getChallengePreset(
+  req: PayloadRequest,
+  challengeType: ChallengeType,
+  period: Period,
+  tier: DifficultyTier
+): Promise<number | null> {
+  return getChallengePresetWithPayload(req.payload, challengeType, period, tier)
 }
 
 /**
@@ -73,8 +127,8 @@ export async function getAvailablePresets(
       .split('_')
       .map((word) => capitalizeFirst(word))
       .join('')
-    const fieldName = `${period}${camelCaseType}` as keyof typeof config
-    const presetGroup = config[fieldName] as { easy?: number; medium?: number; hard?: number } | undefined
+    const fieldName = `${period}${camelCaseType}`
+    const presetGroup = getConfigField(config, fieldName)
 
     if (!presetGroup) {
       return []
@@ -99,12 +153,9 @@ export async function getAvailablePresets(
   }
 }
 
-/**
- * Get generation count for a period
- */
-export async function getGenerationCount(req: PayloadRequest, period: Period): Promise<number> {
+export async function getGenerationCountWithPayload(payload: Payload, period: Period): Promise<number> {
   try {
-    const config = await req.payload.findGlobal({
+    const config = await payload.findGlobal({
       slug: 'challenge-config',
     })
 
@@ -112,14 +163,28 @@ export async function getGenerationCount(req: PayloadRequest, period: Period): P
       return period === 'daily' ? 3 : 3 // Default fallback
     }
 
-    const countField = `${period}ChallengesCount` as keyof typeof config
-    const count = config[countField]
+    const countField = `${period}ChallengesCount`
+    const count =
+      countField === 'dailyChallengesCount'
+        ? config.dailyChallengesCount
+        : countField === 'weeklyChallengesCount'
+          ? config.weeklyChallengesCount
+          : countField === 'monthlyChallengesCount'
+            ? config.monthlyChallengesCount
+            : undefined
 
     return typeof count === 'number' ? count : 3
   } catch (error) {
     console.error('Error getting generation count:', error)
     return 3
   }
+}
+
+/**
+ * Get generation count for a period
+ */
+export async function getGenerationCount(req: PayloadRequest, period: Period): Promise<number> {
+  return getGenerationCountWithPayload(req.payload, period)
 }
 
 /**
@@ -136,7 +201,7 @@ export async function getChallengeCost(req: PayloadRequest, tier: DifficultyTier
       return tier === 'easy' ? 10 : tier === 'medium' ? 50 : 100
     }
 
-    const costMultipliers = config.costMultipliers as { easy?: number; medium?: number; hard?: number } | undefined
+    const costMultipliers = config.costMultipliers
 
     if (!costMultipliers) {
       return tier === 'easy' ? 10 : tier === 'medium' ? 50 : 100
@@ -218,12 +283,11 @@ export function generateDescription(
   return templates[challengeType]
 }
 
-/**
- * Get available categories
- */
-export async function getAvailableCategories(req: PayloadRequest): Promise<Array<{ category: string; difficultyAdjustment: number }>> {
+export async function getAvailableCategoriesWithPayload(
+  payload: Payload
+): Promise<Array<{ category: string; difficultyAdjustment: number }>> {
   try {
-    const config = await req.payload.findGlobal({
+    const config = await payload.findGlobal({
       slug: 'challenge-config',
     })
 
@@ -231,13 +295,27 @@ export async function getAvailableCategories(req: PayloadRequest): Promise<Array
       return []
     }
 
-    const categories = config.availableCategories as Array<{ category: string; difficultyAdjustment: number }> | undefined
+    const categories = config.availableCategories
 
-    return categories || []
+    if (!categories) {
+      return []
+    }
+
+    return categories.map((cat) => ({
+      category: cat.category,
+      difficultyAdjustment: cat.difficultyAdjustment ?? 0,
+    }))
   } catch (error) {
     console.error('Error getting available categories:', error)
     return []
   }
+}
+
+/**
+ * Get available categories
+ */
+export async function getAvailableCategories(req: PayloadRequest): Promise<Array<{ category: string; difficultyAdjustment: number }>> {
+  return getAvailableCategoriesWithPayload(req.payload)
 }
 
 function capitalizeFirst(str: string): string {

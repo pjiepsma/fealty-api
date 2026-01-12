@@ -142,7 +142,7 @@ async function fetchPOIsFromOverpass(
               poi.tags['wikipedia:en'] ||
               poi.tags['wikipedia:nl'] ||
               undefined,
-          } as POI
+          }
         })
 
       return mappedPOIs
@@ -220,11 +220,6 @@ async function reverseGeocode(
   }
 }
 
-interface SyncCityRequestBody {
-  lat: number
-  lng: number
-}
-
 /**
  * Sync POIs for a city
  * If city found, checks if POIs exist in database, if not fetches from Overpass and stores them
@@ -233,10 +228,22 @@ interface SyncCityRequestBody {
 export async function POST(request: NextRequest) {
   console.log('[sync-city] POST request received')
   try {
-    const body = (await request.json()) as SyncCityRequestBody
-    const { lat, lng } = body
-
-    if (!lat || !lng) {
+    const jsonBody = await request.json()
+    if (typeof jsonBody !== 'object' || jsonBody === null) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request body',
+          city: null,
+          country: null,
+          pois: [],
+          synced: false,
+          count: 0,
+        },
+        { status: 400 },
+      )
+    }
+    if (!('lat' in jsonBody) || !('lng' in jsonBody)) {
       return NextResponse.json(
         {
           success: false,
@@ -250,6 +257,39 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
+
+    const body = jsonBody
+    if (typeof body.lat !== 'number') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid lat parameter - must be a number',
+          city: null,
+          country: null,
+          pois: [],
+          synced: false,
+          count: 0,
+        },
+        { status: 400 },
+      )
+    }
+    if (typeof body.lng !== 'number') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid lng parameter - must be a number',
+          city: null,
+          country: null,
+          pois: [],
+          synced: false,
+          count: 0,
+        },
+        { status: 400 },
+      )
+    }
+
+    const lat = body.lat
+    const lng = body.lng
 
     // Step 1: Reverse geocode to get city name
     const location = await reverseGeocode(lat, lng)
@@ -305,7 +345,7 @@ export async function POST(request: NextRequest) {
         limit: 10000, // Get all POIs for the city
       })
 
-      const pois = allPOIs.docs.map((poi: Pois) => ({
+      const pois: POI[] = allPOIs.docs.map((poi) => ({
         id: poi.id,
         name: poi.name,
         coordinates: poi.coordinates || [poi.longitude, poi.latitude],
@@ -313,11 +353,11 @@ export async function POST(request: NextRequest) {
         longitude: poi.longitude,
         type: poi.type,
         category: poi.category,
-        description: (poi as any).description,
-        website: (poi as any).website,
-        wikipedia: (poi as any).wikipedia,
-        city: (poi as any).city,
-        country: (poi as any).country,
+        description: undefined,
+        website: undefined,
+        wikipedia: undefined,
+        city: poi.city || null,
+        country: poi.country || null,
       }))
 
       return NextResponse.json({
@@ -362,7 +402,7 @@ export async function POST(request: NextRequest) {
           console.log(`[sync-city] Successfully fetched ${result.length} POIs from Overpass`)
           break
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn(`[sync-city] Failed to fetch from ${endpoint}, trying next...`)
         continue
       }
@@ -402,7 +442,7 @@ export async function POST(request: NextRequest) {
 
         if (existing.totalDocs > 0) {
           // POI already exists - update city/country if needed
-          const existingPOI = existing.docs[0] as any
+          const existingPOI = existing.docs[0]
           if (!existingPOI.city || !existingPOI.country) {
             await payload.update({
               collection: 'pois',
@@ -446,16 +486,16 @@ export async function POST(request: NextRequest) {
           longitude: created.longitude,
           type: created.type,
           category: created.category,
-          description: (created as any).description,
-          website: (created as any).website,
-          wikipedia: (created as any).wikipedia,
+          description: undefined,
+          website: undefined,
+          wikipedia: undefined,
           city: city,
           country: country,
         })
         storedCount++
-      } catch (error: any) {
+      } catch (error) {
         // Handle duplicate key errors or other issues
-        if (error.message?.includes('E11000') || error.message?.includes('duplicate')) {
+        if (error instanceof Error && (error.message?.includes('E11000') || error.message?.includes('duplicate'))) {
           duplicateCount++
           console.warn(`[sync-city] Duplicate POI skipped: ${poi.id}`)
         } else {

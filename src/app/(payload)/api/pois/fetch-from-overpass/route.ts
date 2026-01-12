@@ -144,7 +144,7 @@ async function fetchWithRetry(
               poi.tags['wikipedia:en'] ||
               poi.tags['wikipedia:nl'] ||
               undefined,
-          } as POI
+          }
         })
 
       return mappedPOIs
@@ -184,11 +184,6 @@ async function fetchWithRetry(
   return []
 }
 
-interface FetchPOIsRequestBody {
-  lat: number
-  lng: number
-  radius?: number
-}
 
 /**
  * Public endpoint for fetching POIs from Overpass API
@@ -198,11 +193,16 @@ interface FetchPOIsRequestBody {
 export async function POST(request: NextRequest) {
   console.log('[fetch-from-overpass] POST request received - Public endpoint, no auth required')
   try {
-    const body = (await request.json()) as FetchPOIsRequestBody
-    const { lat, lng, radius = 10000 } = body
-    console.log('[fetch-from-overpass] Request params:', { lat, lng, radius })
-
-    if (!lat || !lng) {
+    const jsonBody = await request.json()
+    if (typeof jsonBody !== 'object' || jsonBody === null) {
+      return NextResponse.json(
+        {
+          error: 'Invalid request body',
+        },
+        { status: 400 },
+      )
+    }
+    if (!('lat' in jsonBody) || !('lng' in jsonBody)) {
       return NextResponse.json(
         {
           error: 'Missing required parameters: lat and lng',
@@ -210,6 +210,45 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
+
+    if (typeof jsonBody !== 'object' || jsonBody === null) {
+      return NextResponse.json(
+        {
+          error: 'Invalid request body',
+        },
+        { status: 400 },
+      )
+    }
+    if (!('lat' in jsonBody) || !('lng' in jsonBody)) {
+      return NextResponse.json(
+        {
+          error: 'Missing required parameters: lat and lng',
+        },
+        { status: 400 },
+      )
+    }
+    const body = jsonBody
+    if (typeof body.lat !== 'number') {
+      return NextResponse.json(
+        {
+          error: 'Invalid lat parameter - must be a number',
+        },
+        { status: 400 },
+      )
+    }
+    if (typeof body.lng !== 'number') {
+      return NextResponse.json(
+        {
+          error: 'Invalid lng parameter - must be a number',
+        },
+        { status: 400 },
+      )
+    }
+
+    const lat = body.lat
+    const lng = body.lng
+    const radius = typeof body.radius === 'number' ? body.radius : 10000
+    console.log('[fetch-from-overpass] Request params:', { lat, lng, radius })
 
     const query = `
       [out:json][timeout:25];

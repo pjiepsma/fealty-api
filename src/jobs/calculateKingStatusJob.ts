@@ -1,6 +1,5 @@
-<<<<<<< HEAD
 import type { PayloadRequest } from 'payload'
-import type { Session, User } from '@/payload-types'
+import type { Session } from '@/payload-types'
 
 export const calculateKingStatusTask = {
   slug: 'calculate-king-status',
@@ -47,7 +46,7 @@ export const calculateKingStatusTask = {
 
           // Group by user and sum seconds
           const userSecondsMap = new Map<string, number>()
-          
+
           sessions.docs.forEach((session: Session) => {
             const userId = typeof session.user === 'string' ? session.user : session.user?.id
             if (userId) {
@@ -59,7 +58,7 @@ export const calculateKingStatusTask = {
           // Find king (user with most seconds)
           let maxSeconds = 0
           let kingUserId: string | null = null
-          
+
           userSecondsMap.forEach((seconds, userId) => {
             if (seconds > maxSeconds) {
               maxSeconds = seconds
@@ -68,9 +67,8 @@ export const calculateKingStatusTask = {
           })
 
           // Get current king
-          const currentKingId = typeof poi.currentKing === 'string' 
-            ? poi.currentKing 
-            : poi.currentKing?.id
+          const currentKingId =
+            typeof poi.currentKing === 'string' ? poi.currentKing : poi.currentKing?.id
 
           // Update if king changed
           if (kingUserId !== currentKingId) {
@@ -112,7 +110,7 @@ export const calculateKingStatusTask = {
           const currentKingOf = kingPOIs.totalDocs
 
           // Update user if count changed
-          if ((user as User).currentKingOf !== currentKingOf) {
+          if (user.currentKingOf !== currentKingOf) {
             await req.payload.update({
               collection: 'users',
               id: user.id,
@@ -127,7 +125,7 @@ export const calculateKingStatusTask = {
       }
 
       console.log(
-        `Calculate king status completed: Processed ${processedCount} POIs, updated ${updatedCount} POIs`
+        `Calculate king status completed: Processed ${processedCount} POIs, updated ${updatedCount} POIs`,
       )
       return {
         output: {
@@ -136,19 +134,13 @@ export const calculateKingStatusTask = {
           updatedCount,
         },
       }
-    } catch (error: unknown) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       console.error('Error in calculateKingStatusTask:', errorMessage)
       return {
-        state: 'failed' as const,
+        state: 'failed',
         errorMessage,
       }
     }
   },
 }
-
-
-
-=======
- 
->>>>>>> b331cb0b5995a1c81e5d01eca51f795f5c1f445a

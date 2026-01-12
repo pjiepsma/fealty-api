@@ -13,9 +13,19 @@ const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     rules: {
-      '@typescript-eslint/ban-ts-comment': 'warn',
+      // Disallow any type
+      '@typescript-eslint/no-explicit-any': 'error',
+      // Disallow all type assertions (as)
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        {
+          assertionStyle: 'never',
+        },
+      ],
+      // Disallow @ts-ignore and similar comments
+      '@typescript-eslint/ban-ts-comment': 'error',
+      // Other strict rules
       '@typescript-eslint/no-empty-object-type': 'warn',
-      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {

@@ -1,8 +1,11 @@
-import type { PayloadRequest } from 'payload'
+import type { PayloadRequest, Payload } from 'payload'
 import type { ChallengeType, DifficultyTier, Period } from '../config/challengeRules'
 import {
   getChallengePreset,
   getGenerationCount,
+  getChallengePresetWithPayload,
+  getGenerationCountWithPayload,
+  getAvailableCategoriesWithPayload,
   generateTitle,
   generateDescription,
   getAvailableCategories,
@@ -21,15 +24,12 @@ export interface GeneratedChallenge {
   expiresAt: string
 }
 
-/**
- * Generate challenges for a specific user
- */
-export async function generateChallengesForUser(
-  req: PayloadRequest,
+export async function generateChallengesForUserInternal(
+  payload: Payload,
   userId: string,
   period: Period,
 ): Promise<GeneratedChallenge[]> {
-  const count = await getGenerationCount(req, period)
+  const count = await getGenerationCountWithPayload(payload, period)
   const challenges: GeneratedChallenge[] = []
 
   // Get available challenge types
@@ -73,7 +73,7 @@ export async function generateChallengesForUser(
     usedTypes.push(challengeType)
 
     // Get target value from config
-    let targetValue = await getChallengePreset(req, challengeType, period, tier)
+    let targetValue = await getChallengePresetWithPayload(payload, challengeType, period, tier)
 
     if (!targetValue) {
       console.warn(`No preset found for ${challengeType} ${period} ${tier}, skipping`)
@@ -105,7 +105,7 @@ export async function generateChallengesForUser(
     let targetCategory: string | undefined
     let categoryAdjustment = 0
     if (challengeType === 'category_similarity' || challengeType === 'entry_count') {
-      const categories = await getAvailableCategories(req)
+      const categories = await getAvailableCategoriesWithPayload(payload)
       if (categories.length > 0) {
         const randomCategory = categories[Math.floor(Math.random() * categories.length)]
         targetCategory = randomCategory.category
@@ -137,6 +137,17 @@ export async function generateChallengesForUser(
   }
 
   return challenges
+}
+
+/**
+ * Generate challenges for a specific user
+ */
+export async function generateChallengesForUser(
+  req: PayloadRequest,
+  userId: string,
+  period: Period,
+): Promise<GeneratedChallenge[]> {
+  return generateChallengesForUserInternal(req.payload, userId, period)
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
-import type { Session, Challenge, Pois, Reward } from '@/payload-types'
+import type { Session, Pois, Reward } from '@/payload-types'
 import { RewardService } from '@/services/rewardService'
 
 // Default daily seconds limit (fallback when game config is not available)
@@ -23,14 +23,15 @@ export const Sessions: CollectionConfig = {
               slug: 'game-config',
             })
 
-            type GameConfigType = { dailySecondsLimit?: number }
-            const typedConfig = gameConfig as GameConfigType
+            if (!gameConfig) {
+              throw new Error('Game config not found')
+            }
 
-            if (typeof typedConfig.dailySecondsLimit !== 'number') {
+            if (!('dailySecondsLimit' in gameConfig) || typeof gameConfig.dailySecondsLimit !== 'number') {
               throw new Error('Game config missing required field: dailySecondsLimit')
             }
 
-            const dailySecondsLimit = typedConfig.dailySecondsLimit
+            const dailySecondsLimit = gameConfig.dailySecondsLimit
             
             const userId = typeof data.user === 'string' ? data.user : data.user?.id
             const poiId = typeof data.poi === 'string' ? data.poi : data.poi?.id
@@ -288,14 +289,14 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
         poi = await req.payload.findByID({
           collection: 'pois',
           id: poiId,
-        }) as Pois
+        })
       } catch (error) {
         console.error(`Error fetching POI ${poiId}:`, error)
       }
     }
 
     // Process each challenge
-    for (const challenge of activeChallenges.docs as Challenge[]) {
+    for (const challenge of activeChallenges.docs) {
       try {
         let newProgress = challenge.progress || 0
         let shouldUpdate = false
@@ -372,7 +373,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
               })
 
               const uniqueCategories = new Set<string>()
-              for (const s of userSessions.docs as Session[]) {
+              for (const s of userSessions.docs) {
                 const poiData = typeof s.poi === 'string' ? null : s.poi
                 if (poiData && poiData.category) {
                   uniqueCategories.add(poiData.category)
@@ -464,12 +465,20 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
             // Activate reward
             const reward = challenge.reward
             if (reward) {
-              const rewardData: Reward = typeof reward === 'string'
-                ? (await req.payload.findByID({
+              let rewardData: Reward | null = null
+              if (typeof reward === 'string') {
+                try {
+                  const foundReward = await req.payload.findByID({
                     collection: 'rewards',
                     id: reward,
-                  }) as Reward)
-                : (reward as Reward)
+                  })
+                  rewardData = foundReward
+                } catch (error) {
+                  console.error(`Error fetching reward ${reward}:`, error)
+                }
+              } else {
+                rewardData = reward
+              }
 
               if (rewardData) {
                 await RewardService.activateReward(

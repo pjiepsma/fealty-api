@@ -24,12 +24,17 @@ export class RewardService {
     const user = await payload.findByID({
       collection: 'users',
       id: userId,
-    }) as User
+    })
+
+    if (!user) {
+      throw new Error(`User ${userId} not found`)
+    }
 
     // Extract ActiveReward type from User's activeRewards field (which is an array)
     type ActiveReward = NonNullable<User['activeRewards']> extends (infer U)[] ? U : never
 
-    let activeRewards = (user.activeRewards || []) as ActiveReward[]
+    const userActiveRewards = user.activeRewards
+    let activeRewards: ActiveReward[] = userActiveRewards && Array.isArray(userActiveRewards) ? userActiveRewards : []
 
     // Clean up expired active rewards - mark them as inactive if they have uses left, remove if no uses
     activeRewards = activeRewards.map((reward: ActiveReward) => {
@@ -88,7 +93,7 @@ export class RewardService {
       season: reward.rewardType === 'bonus_crowns' ? season : undefined,
       usesRemaining: usesRemaining || undefined,
       isActive: true,
-    } as ActiveReward
+    }
 
     await payload.update({
       collection: 'users',
