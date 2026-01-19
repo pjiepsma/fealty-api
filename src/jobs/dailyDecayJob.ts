@@ -55,7 +55,7 @@ export const dailyDecayTask = {
           const totalSeconds = user.totalSeconds
 
           // Get user's active decay_reduction rewards
-          const activeRewards = (user.activeRewards || []).filter(
+          const activeRewards = (user.activeRewards ?? []).filter(
             (reward: NonNullable<User['activeRewards']>[number]) => {
               if (!reward.isActive || reward.rewardType !== 'decay_reduction') {
                 return false

@@ -1,4 +1,4 @@
-import type { Payload } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 import type { User, Reward } from '@/payload-types'
 
 /**
@@ -14,7 +14,8 @@ export class RewardService {
     payload: Payload,
     userId: string,
     reward: Reward,
-    challengeId?: string
+    challengeId?: string,
+    req?: PayloadRequest,
   ): Promise<void> {
     // Get current month for season-based rewards
     const now = new Date()
@@ -24,6 +25,7 @@ export class RewardService {
     const user = await payload.findByID({
       collection: 'users',
       id: userId,
+      ...(req && { req }),
     })
 
     if (!user) {
@@ -34,32 +36,36 @@ export class RewardService {
     type ActiveReward = NonNullable<User['activeRewards']> extends (infer U)[] ? U : never
 
     const userActiveRewards = user.activeRewards
-    let activeRewards: ActiveReward[] = userActiveRewards && Array.isArray(userActiveRewards) ? userActiveRewards : []
+    let activeRewards: ActiveReward[] =
+      userActiveRewards && Array.isArray(userActiveRewards) ? userActiveRewards : []
 
     // Clean up expired active rewards - mark them as inactive if they have uses left, remove if no uses
-    activeRewards = activeRewards.map((reward: ActiveReward) => {
-      if (reward.isActive && reward.activatedAt && reward.duration) {
-        const activatedTime = new Date(reward.activatedAt).getTime()
-        const durationMs = reward.duration * 60 * 60 * 1000
-        const expiresAt = activatedTime + durationMs
+    activeRewards = activeRewards
+      .map((reward: ActiveReward) => {
+        if (reward.isActive && reward.activatedAt && reward.duration) {
+          const activatedTime = new Date(reward.activatedAt).getTime()
+          const durationMs = reward.duration * 60 * 60 * 1000
+          const expiresAt = activatedTime + durationMs
 
-        if (expiresAt <= now.getTime()) {
-          // Reward has expired
-          const hasUsesLeft = reward.usesRemaining === null ||
-                             reward.usesRemaining === undefined ||
-                             reward.usesRemaining > 0
+          if (expiresAt <= now.getTime()) {
+            // Reward has expired
+            const hasUsesLeft =
+              reward.usesRemaining === null ||
+              reward.usesRemaining === undefined ||
+              reward.usesRemaining > 0
 
-          if (hasUsesLeft) {
-            // Mark as inactive but keep for reactivation
-            return { ...reward, isActive: false }
-          } else {
-            // Remove completely - return null and filter out later
-            return null
+            if (hasUsesLeft) {
+              // Mark as inactive but keep for reactivation
+              return { ...reward, isActive: false }
+            } else {
+              // Remove completely - return null and filter out later
+              return null
+            }
           }
         }
-      }
-      return reward
-    }).filter((reward): reward is ActiveReward => reward !== null)
+        return reward
+      })
+      .filter((reward): reward is ActiveReward => reward !== null)
 
     // Store activation time and duration
     const activatedAt = new Date().toISOString()
@@ -101,7 +107,7 @@ export class RewardService {
       data: {
         activeRewards: [...activeRewards, activeReward],
       },
+      ...(req && { req }),
     })
   }
 }
-

@@ -44,8 +44,8 @@ export async function GET(_request: NextRequest) {
       for (const session of sessions.docs) {
         const userId = typeof session.user === 'string' ? session.user : session.user?.id
         if (userId) {
-          const existing = userStats.get(userId) || 0
-          userStats.set(userId, existing + (session.secondsEarned || 0))
+          const existing = userStats.get(userId) ?? 0
+          userStats.set(userId, existing + (session.secondsEarned ?? 0))
         }
       }
 
@@ -62,7 +62,7 @@ export async function GET(_request: NextRequest) {
 
         if (kingSession) {
           const user = typeof kingSession.user === 'object' ? kingSession.user : null
-          const username = user?.username || user?.email || 'Unknown'
+          const username = user?.username ?? user?.email ?? 'Unknown'
 
           const existing = userCrowns.get(kingUserId)
           if (existing) {

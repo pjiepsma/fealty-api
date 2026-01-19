@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const poiId = searchParams.get('poiId')
-    const month = searchParams.get('month') || new Date().toISOString().slice(0, 7) // YYYY-MM
+    const month = searchParams.get('month') ?? new Date().toISOString().slice(0, 7) // YYYY-MM
 
     if (!poiId) {
       return NextResponse.json(
@@ -46,17 +46,17 @@ export async function GET(request: NextRequest) {
     for (const session of sessions.docs) {
       const userId = typeof session.user === 'string' ? session.user : session.user?.id
       const user = typeof session.user === 'object' ? session.user : null
-      const username = user?.username || user?.email || 'Unknown'
+      const username = user?.username ?? user?.email ?? 'Unknown'
 
       if (userId) {
         const existing = userStats.get(userId)
         if (existing) {
-          existing.seconds += session.secondsEarned || 0
+          existing.seconds += session.secondsEarned ?? 0
         } else {
           userStats.set(userId, {
             userId,
             username,
-            seconds: session.secondsEarned || 0,
+            seconds: session.secondsEarned ?? 0,
           })
         }
       }

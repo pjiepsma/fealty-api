@@ -50,8 +50,8 @@ export const calculateKingStatusTask = {
           sessions.docs.forEach((session: Session) => {
             const userId = typeof session.user === 'string' ? session.user : session.user?.id
             if (userId) {
-              const current = userSecondsMap.get(userId) || 0
-              userSecondsMap.set(userId, current + (session.secondsEarned || 0))
+              const current = userSecondsMap.get(userId) ?? 0
+              userSecondsMap.set(userId, current + (session.secondsEarned ?? 0))
             }
           })
 

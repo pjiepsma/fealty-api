@@ -25,7 +25,7 @@ export async function sendPushNotification(
     }
 
     // Get active push tokens
-    const userPushTokens = user.pushTokens || []
+    const userPushTokens = user.pushTokens ?? []
     const pushTokens = userPushTokens.filter(
       (token) => token.isActive && token.expoPushToken
     )
@@ -40,7 +40,7 @@ export async function sendPushNotification(
       sound: 'default' as const,
       title,
       body,
-      data: data || {},
+      data: data ?? {},
     }))
 
     // Send to Expo Push Notification API
@@ -107,7 +107,7 @@ export async function sendPushNotificationWithPreferences(
     }
 
     // Check user's notification preferences
-    const notificationSettings = user.notificationSettings || {}
+    const notificationSettings = user.notificationSettings ?? {}
 
     // Map notification type to setting key
     type NotificationSettingKey = 'captureComplete' | 'kingStatusChanged' | 'leaderboardUpdate' | 'newChallenge'

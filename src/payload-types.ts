@@ -320,8 +320,7 @@ export interface Reward {
     | 'larger_radius'
     | 'extended_capture'
     | 'bonus_crowns'
-    | 'decay_reduction'
-    | 'coins';
+    | 'decay_reduction';
   /**
    * Reward value (e.g., 0.1 for 10% reduction, 10 for bonus seconds)
    */
@@ -373,49 +372,36 @@ export interface Media {
  * via the `definition` "pois".
  */
 export interface Pois {
-  /**
-   * Unique identifier for the POI (e.g., OSM ID)
-   */
   id: string;
-  /**
-   * Name of the POI
-   */
   name: string;
   /**
-   * Geographic coordinates (longitude, latitude)
-   *
    * @minItems 2
    * @maxItems 2
    */
   coordinates: [number, number];
-  /**
-   * Latitude (for easier querying)
-   */
   latitude: number;
-  /**
-   * Longitude (for easier querying)
-   */
   longitude: number;
-  /**
-   * POI type (e.g., park, church, monument)
-   */
   type: string;
+  category?: string | null;
+  description?: string | null;
+  website?: string | null;
+  wikipedia?: string | null;
   /**
-   * POI category (e.g., leisure, religion, tourism)
+   * City where the POI is located
    */
-  category: string;
+  city?: string | null;
+  /**
+   * Country where the POI is located
+   */
+  country?: string | null;
+  /**
+   * Mapbox tile ID at zoom 14 (format: "zoom/x/y")
+   */
+  tileId?: string | null;
   /**
    * User who currently has the most seconds at this POI
    */
   currentKing?: (string | null) | User;
-  /**
-   * City name where the POI is located
-   */
-  city?: string | null;
-  /**
-   * Country name where the POI is located
-   */
-  country?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -715,9 +701,13 @@ export interface PoisSelect<T extends boolean = true> {
   longitude?: T;
   type?: T;
   category?: T;
-  currentKing?: T;
+  description?: T;
+  website?: T;
+  wikipedia?: T;
   city?: T;
   country?: T;
+  tileId?: T;
+  currentKing?: T;
   updatedAt?: T;
   createdAt?: T;
 }

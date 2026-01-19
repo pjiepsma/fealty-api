@@ -46,14 +46,14 @@ export const runDailyDecay = async () => {
 
     for (const user of users.docs) {
       try {
-        const totalSeconds = user.totalSeconds || 0
+        const totalSeconds = user.totalSeconds ?? 0
 
         if (totalSeconds <= 0) {
           continue
         }
 
         // Get user's active decay_reduction rewards
-        const activeRewards = (user.activeRewards || []).filter(
+        const activeRewards = (user.activeRewards ?? []).filter(
           (reward: NonNullable<User['activeRewards']>[number]) => {
             if (!reward.isActive || reward.rewardType !== 'decay_reduction') {
               return false

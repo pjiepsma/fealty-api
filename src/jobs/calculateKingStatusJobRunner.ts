@@ -53,8 +53,8 @@ export async function runCalculateKingStatus(): Promise<{ success: boolean; proc
         sessions.docs.forEach((session: Session) => {
           const userId = typeof session.user === 'string' ? session.user : session.user?.id
           if (userId) {
-            const current = userSecondsMap.get(userId) || 0
-            userSecondsMap.set(userId, current + (session.secondsEarned || 0))
+            const current = userSecondsMap.get(userId) ?? 0
+            userSecondsMap.set(userId, current + (session.secondsEarned ?? 0))
           }
         })
 
@@ -106,7 +106,7 @@ export async function runCalculateKingStatus(): Promise<{ success: boolean; proc
           limit: 1,
         })
 
-        const currentCount = user.currentKingOf || 0
+        const currentCount = user.currentKingOf ?? 0
         const actualCount = kingOfCount.totalDocs
 
         if (currentCount !== actualCount) {

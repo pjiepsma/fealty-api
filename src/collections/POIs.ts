@@ -1,3 +1,6 @@
+// Note: This file should be added to the existing POIs collection
+// Add the tileId field to the fields array
+
 import type { CollectionConfig } from 'payload'
 
 export const POIs: CollectionConfig = {
@@ -6,63 +9,79 @@ export const POIs: CollectionConfig = {
     useAsTitle: 'name',
   },
   fields: [
+    // ... existing fields ...
     {
       name: 'id',
       type: 'text',
       required: true,
       unique: true,
-      admin: {
-        description: 'Unique identifier for the POI (e.g., OSM ID)',
-      },
     },
     {
       name: 'name',
       type: 'text',
       required: true,
-      admin: {
-        description: 'Name of the POI',
-      },
+      localized: true,
     },
     {
       name: 'coordinates',
       type: 'point',
       required: true,
-      index: true, // Create geospatial index
-      admin: {
-        description: 'Geographic coordinates (longitude, latitude)',
-      },
     },
     {
       name: 'latitude',
       type: 'number',
       required: true,
-      admin: {
-        description: 'Latitude (for easier querying)',
-      },
     },
     {
       name: 'longitude',
       type: 'number',
       required: true,
-      admin: {
-        description: 'Longitude (for easier querying)',
-      },
     },
     {
       name: 'type',
       type: 'text',
       required: true,
-      admin: {
-        description: 'POI type (e.g., park, church, monument)',
-      },
     },
     {
       name: 'category',
       type: 'text',
-      required: true,
+    },
+    {
+      name: 'description',
+      type: 'textarea',
+      localized: true,
+    },
+    {
+      name: 'website',
+      type: 'text',
+    },
+    {
+      name: 'wikipedia',
+      type: 'text',
+    },
+    {
+      name: 'city',
+      type: 'text',
+      localized: true,
       admin: {
-        description: 'POI category (e.g., leisure, religion, tourism)',
+        description: 'City where the POI is located',
       },
+    },
+    {
+      name: 'country',
+      type: 'text',
+      localized: true,
+      admin: {
+        description: 'Country where the POI is located',
+      },
+    },
+    {
+      name: 'tileId',
+      type: 'text',
+      admin: {
+        description: 'Mapbox tile ID at zoom 14 (format: "zoom/x/y")',
+      },
+      index: true, // Index for fast queries
     },
     {
       name: 'currentKing',
@@ -73,28 +92,6 @@ export const POIs: CollectionConfig = {
         readOnly: true,
       },
     },
-    {
-      name: 'city',
-      type: 'text',
-      index: true,
-      admin: {
-        description: 'City name where the POI is located',
-      },
-    },
-    {
-      name: 'country',
-      type: 'text',
-      index: true,
-      admin: {
-        description: 'Country name where the POI is located',
-      },
-    },
   ],
   timestamps: true,
 }
-
-
-
-
-
-

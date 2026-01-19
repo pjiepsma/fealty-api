@@ -75,7 +75,7 @@ export const Sessions: CollectionConfig = {
 
             // Calculate total seconds earned today at this POI
             const dailyTotal = todaySessions.docs.reduce((sum: number, session: Session) => {
-              return sum + (session.secondsEarned || 0)
+              return sum + (session.secondsEarned ?? 0)
             }, 0)
 
             const requestedSeconds = typeof data.secondsEarned === 'number' ? data.secondsEarned : 0
@@ -117,10 +117,11 @@ export const Sessions: CollectionConfig = {
             const user = await req.payload.findByID({
               collection: 'users',
               id: userId,
+              req,
             })
 
             // Calculate new stats
-            const totalSeconds = (user.totalSeconds || 0) + doc.secondsEarned
+            const totalSeconds = (user.totalSeconds ?? 0) + doc.secondsEarned
 
             // Count unique POIs claimed by this user
             const userSessions = await req.payload.find({
@@ -131,6 +132,7 @@ export const Sessions: CollectionConfig = {
                 },
               },
               limit: 1000,
+              req,
             })
 
             const uniquePOIs = new Set(
@@ -151,6 +153,7 @@ export const Sessions: CollectionConfig = {
                 totalPOIsClaimed,
                 lastActive: new Date().toISOString(),
               },
+              req,
             })
 
             // Update challenge progress
@@ -254,7 +257,7 @@ export const Sessions: CollectionConfig = {
 async function updateChallengeProgress(req: PayloadRequest, userId: string, session: Session) {
   try {
     const poiId = typeof session.poi === 'string' ? session.poi : session.poi?.id
-    const secondsEarned = session.secondsEarned || 0
+    const secondsEarned = session.secondsEarned ?? 0
     const now = new Date()
 
     // Get all non-completed challenges for this user
@@ -276,6 +279,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
         ],
       },
       limit: 100,
+      req,
     })
 
     if (activeChallenges.docs.length === 0) {
@@ -289,6 +293,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
         poi = await req.payload.findByID({
           collection: 'pois',
           id: poiId,
+          req,
         })
       } catch (error) {
         console.error(`Error fetching POI ${poiId}:`, error)
@@ -298,7 +303,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
     // Process each challenge
     for (const challenge of activeChallenges.docs) {
       try {
-        let newProgress = challenge.progress || 0
+        let newProgress = challenge.progress ?? 0
         let shouldUpdate = false
 
         switch (challenge.challengeType) {
@@ -333,6 +338,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
                   },
                 },
                 limit: 1000,
+                req,
               })
 
               const uniquePOIs = new Set(
@@ -370,6 +376,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
                 },
                 limit: 1000,
                 depth: 1,
+                req,
               })
 
               const uniqueCategories = new Set<string>()
@@ -405,6 +412,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
                   ],
                 },
                 limit: 1000,
+                req,
               })
 
               newProgress = userSessions.totalDocs
@@ -437,6 +445,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
                   ],
                 },
                 limit: 1,
+                req,
               })
 
               // If no previous sessions at this POI, this is a new location
@@ -458,7 +467,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
           }
 
           // Check if challenge is completed
-          const targetValue = challenge.targetValue || 0
+          const targetValue = challenge.targetValue ?? 0
           if (newProgress >= targetValue && !challenge.completedAt) {
             updateData.completedAt = now.toISOString()
 
@@ -471,6 +480,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
                   const foundReward = await req.payload.findByID({
                     collection: 'rewards',
                     id: reward,
+                    req,
                   })
                   rewardData = foundReward
                 } catch (error) {
@@ -486,6 +496,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
                   userId,
                   rewardData,
                   challenge.id,
+                  req,
                 )
               }
             }
@@ -495,6 +506,7 @@ async function updateChallengeProgress(req: PayloadRequest, userId: string, sess
             collection: 'challenges',
             id: challenge.id,
             data: updateData,
+            req,
           })
         }
       } catch (error) {
