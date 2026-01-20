@@ -39,6 +39,12 @@ These are non-negotiable coding standards that must be followed in this codebase
 - For index signatures or Record types, use a single specific type: `Record<string, string>` not `Record<string, string | number | boolean>`
 - If you need multiple types, define specific properties instead of using a union type
 
+### 6. Always Generate Types After Adding Collections/Globals
+- **ALWAYS** run `pnpm generate:types` after adding new collections or globals to Payload
+- This generates TypeScript types in `src/payload-types.ts`
+- **NEVER** use `@ts-ignore` or `@ts-expect-error` as a workaround - generate the types instead
+- If types are missing, run `pnpm generate:types` before writing any code that uses the new collection/global
+
 ## Icons and Emojis
 
 - Do not use icons or emojis like ❌ ✅ 🔒 in code, documentation, or commit messages

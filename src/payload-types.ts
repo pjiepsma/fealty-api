@@ -73,6 +73,7 @@ export interface Config {
     sessions: Session;
     rewards: Reward;
     challenges: Challenge;
+    logs: Log;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     sessions: SessionsSelect<false> | SessionsSelect<true>;
     rewards: RewardsSelect<false> | RewardsSelect<true>;
     challenges: ChallengesSelect<false> | ChallengesSelect<true>;
+    logs: LogsSelect<false> | LogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -508,6 +510,62 @@ export interface Challenge {
   createdAt: string;
 }
 /**
+ * System logs for cron jobs and operations
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "logs".
+ */
+export interface Log {
+  id: string;
+  /**
+   * When this log entry was created
+   */
+  timestamp: string;
+  /**
+   * Log level
+   */
+  level: 'info' | 'warning' | 'error' | 'success';
+  /**
+   * Which job/system this log is from
+   */
+  job?:
+    | (
+        | 'assign-daily-challenges'
+        | 'assign-weekly-challenges'
+        | 'assign-monthly-challenges'
+        | 'expire-challenges'
+        | 'daily-decay'
+        | 'calculate-king-status'
+        | 'expire-old-rewards'
+        | 'expire-season-rewards'
+        | 'cron-job'
+        | 'other'
+      )
+    | null;
+  /**
+   * Log message
+   */
+  message: string;
+  /**
+   * Additional data/context (JSON)
+   */
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Error message or stack trace
+   */
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -554,6 +612,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'challenges';
         value: string | Challenge;
+      } | null)
+    | ({
+        relationTo: 'logs';
+        value: string | Log;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -758,6 +820,20 @@ export interface ChallengesSelect<T extends boolean = true> {
   progress?: T;
   completedAt?: T;
   expiresAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "logs_select".
+ */
+export interface LogsSelect<T extends boolean = true> {
+  timestamp?: T;
+  level?: T;
+  job?: T;
+  message?: T;
+  data?: T;
+  error?: T;
   updatedAt?: T;
   createdAt?: T;
 }

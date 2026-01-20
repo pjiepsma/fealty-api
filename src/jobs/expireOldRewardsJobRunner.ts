@@ -10,14 +10,10 @@ export async function runExpireOldRewards(): Promise<{ success: boolean; process
     const payload = await getPayload({ config })
     const now = new Date()
 
-    // Get all users with activeRewards
+    // Get all users (avoids Mongoose casting error with exists:true on optional array fields)
+    // Code handles missing activeRewards with ?? [] below
     const users = await payload.find({
       collection: 'users',
-      where: {
-        activeRewards: {
-          exists: true,
-        },
-      },
       limit: 1000,
     })
 

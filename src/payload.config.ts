@@ -11,6 +11,7 @@ import { POIs } from './collections/POIs'
 import { Sessions } from './collections/Sessions'
 import { Rewards } from './collections/Rewards'
 import { Challenges } from './collections/Challenges'
+import { Logs } from './collections/Logs'
 import { getSelectedEmailAdapter } from './lib/email-adapters/selectEmailAdapter'
 import { ChallengeConfig } from './globals/ChallengeConfig/challengeConfig'
 import { GameConfig } from './globals/GameConfig/gameConfig'
@@ -29,7 +30,7 @@ export default buildConfig({
       beforeDashboard: ['/components/JobTestButtons'],
     },
   },
-  collections: [Users, Media, POIs, Sessions, Rewards, Challenges],
+  collections: [Users, Media, POIs, Sessions, Rewards, Challenges, Logs],
   globals: [ChallengeConfig, GameConfig, Mail],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

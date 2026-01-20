@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { getPayload } from 'payload'
+import config from '@payload-config'
 import { runAssignDailyChallenges } from '@/jobs/assignDailyChallengesJobRunner'
 import { runAssignWeeklyChallenges } from '@/jobs/assignWeeklyChallengesJobRunner'
 import { runAssignMonthlyChallenges } from '@/jobs/assignMonthlyChallengesJobRunner'
@@ -7,6 +9,7 @@ import { runExpireOldRewards } from '@/jobs/expireOldRewardsJobRunner'
 import { runExpireSeasonRewards } from '@/jobs/expireSeasonRewardsJobRunner'
 import { runCalculateKingStatus } from '@/jobs/calculateKingStatusJobRunner'
 import { runDailyDecay } from '@/jobs/dailyDecayJobRunner'
+import { log } from '@/utils/logger'
 
 /**
  * Validates cron job requests using CRON_SECRET authentication
@@ -52,11 +55,20 @@ const isAuthorized = (req: Request): boolean => {
 export const dynamic = 'force-dynamic'
 
 async function runScheduledJobs() {
-  const now = new Date()
+  const payload = await getPayload({ config })
+  const now = new Date('2025-09-01T00:00:00Z') // Monday and 1st of month
+  // const now = new Date() // Real date (use after testing)
+  
   const dayOfWeek = now.getUTCDay() // 0 = Sunday, 1 = Monday, etc.
   const dayOfMonth = now.getUTCDate() // 1-31
 
   console.log(`[CRON] Date check: Day of week=${dayOfWeek}, Day of month=${dayOfMonth}`)
+
+  await log(payload, 'info', 'cron-job', 'Cron job started', {
+    dayOfWeek,
+    dayOfMonth,
+    timestamp: now.toISOString(),
+  })
 
   const results: Record<string, unknown> = {}
 
@@ -85,16 +97,67 @@ async function runScheduledJobs() {
   // Run weekly challenges on Mondays (day 1)
   if (dayOfWeek === 1) {
     console.log('[CRON] 📅 Monday detected! Running weekly challenges...')
-    results.weeklyChallenges = await runAssignWeeklyChallenges()
+    await log(payload, 'info', 'assign-weekly-challenges', 'Monday detected - running weekly challenges')
+    try {
+      results.weeklyChallenges = await runAssignWeeklyChallenges()
+      await log(
+        payload,
+        'success',
+        'assign-weekly-challenges',
+        'Weekly challenges job completed',
+        { result: results.weeklyChallenges },
+      )
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      await log(
+        payload,
+        'error',
+        'assign-weekly-challenges',
+        'Weekly challenges job failed',
+        undefined,
+        errorMessage,
+      )
+      throw error
+    }
+  } else {
+    await log(payload, 'info', 'assign-weekly-challenges', 'Not Monday - skipping weekly challenges', {
+      dayOfWeek,
+    })
   }
 
   // Run monthly challenges on the 1st of the month
   if (dayOfMonth === 1) {
     console.log('[CRON] 📆 First of the month! Running monthly challenges...')
-    results.monthlyChallenges = await runAssignMonthlyChallenges()
+    await log(payload, 'info', 'assign-monthly-challenges', 'First of month detected - running monthly challenges')
+    try {
+      results.monthlyChallenges = await runAssignMonthlyChallenges()
+      await log(
+        payload,
+        'success',
+        'assign-monthly-challenges',
+        'Monthly challenges job completed',
+        { result: results.monthlyChallenges },
+      )
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      await log(
+        payload,
+        'error',
+        'assign-monthly-challenges',
+        'Monthly challenges job failed',
+        undefined,
+        errorMessage,
+      )
+      throw error
+    }
+  } else {
+    await log(payload, 'info', 'assign-monthly-challenges', 'Not first of month - skipping monthly challenges', {
+      dayOfMonth,
+    })
   }
 
   console.log('[CRON] ✅ All jobs completed:', results)
+  await log(payload, 'success', 'cron-job', 'Cron job completed', { results })
   return results
 }
 
