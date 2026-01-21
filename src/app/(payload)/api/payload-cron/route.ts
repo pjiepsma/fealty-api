@@ -56,8 +56,7 @@ export const dynamic = 'force-dynamic'
 
 async function runScheduledJobs() {
   const payload = await getPayload({ config })
-  const now = new Date('2025-09-01T00:00:00Z') // Monday and 1st of month
-  // const now = new Date() // Real date (use after testing)
+  const now = new Date() // Real date
   
   const dayOfWeek = now.getUTCDay() // 0 = Sunday, 1 = Monday, etc.
   const dayOfMonth = now.getUTCDate() // 1-31

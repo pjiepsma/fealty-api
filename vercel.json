@@ -7,7 +7,7 @@
   "crons": [
     {
       "path": "/api/payload-cron",
-      "schedule": "32 22 * * *"
+      "schedule": "0 1 * * *"
     }
   ],
   "functions": {
